@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Blueprint generated state
+blueprint/.state/
+
+# OS / editor
+.DS_Store
+.idea/
