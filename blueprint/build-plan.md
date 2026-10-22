@@ -19,3 +19,6 @@ Scaffolding the app (done) and prototyping are pre-build steps, not features.
 
 - Diet and intolerance filters
 - Shopping list for missing ingredients
+- Search result relevance: candidates often use only 1-2 entered ingredients
+  with `sort=min-missing-ingredients`; `max-used-ingredients` tested better
+- Search speed: ~22 s per search, mostly the two `claude -p` CLI calls

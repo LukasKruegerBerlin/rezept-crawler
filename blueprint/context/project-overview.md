@@ -1,6 +1,6 @@
 # Recipe Crawler - Project Overview
 
-<!-- blueprint:source-hash d5066b448709e2b4ed977d013f8ba2cd2bd83b4333a745acc20f52d8e4c646aa -->
+<!-- blueprint:source-hash 8ba3bf8c66b3005e5de50ff74b83c319cc0014429bb6ab85ac93e19065f3f193 -->
 
 > Local personal tool: enter the ingredients you have, get ranked German recipe suggestions you can cook now or with very few missing ingredients.
 
@@ -42,7 +42,9 @@ Build-plan order (MVP). Headline: **1. Ingredient search**.
    keyboard accessibility across all views.
 
 Later (not tracked yet): diet and intolerance filters; shopping list for missing
-ingredients.
+ingredients; search relevance (with `sort=min-missing-ingredients` candidates
+often use only 1-2 entered ingredients, `max-used-ingredients` tested better);
+search speed (~22 s per search, mostly the two `claude -p` calls).
 
 ### Business rules
 
