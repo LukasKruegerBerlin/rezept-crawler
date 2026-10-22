@@ -24,8 +24,16 @@
 - Keep business logic (for example ingredient matching) in plain functions or
   modules separate from route handlers so it can be tested without HTTP
 
-> TODO: data storage and the recipe source are not chosen yet. Record the
-> persistence and data-access convention here once the project plan decides it.
+- Recipes come from Spoonacular (`httpx`) and translations from Claude via the
+  Claude Code CLI (`claude -p` subprocess on the owner's Pro subscription; never
+  an Anthropic API key or the Anthropic SDK). Each external service has its own
+  module in `app/` (`spoonacular.py`, `translation.py`) that raises its own
+  exception types, which route handlers map to `HTTPException`. Only the
+  backend calls external services.
+
+> TODO: persistence is planned as local JSON files under `backend/data/`
+> (git-ignored). Record the data-access convention when the first feature
+> stores data.
 
 ## API
 
@@ -70,11 +78,10 @@
 
 ## Styling
 
-- Plain CSS as scaffolded (`src/index.css`); no CSS framework is installed
+- Tailwind CSS v4 via `@tailwindcss/vite`; style with utility classes in JSX
+- `src/index.css` holds only the Tailwind import and minimal global base styles
+- Light theme only; no component library
 - No inline styles except for truly dynamic values
-
-> TODO: choose a styling approach (plain CSS, CSS modules, Tailwind, a component
-> library) when the UI direction is decided in the project plan.
 
 ## Error Handling
 

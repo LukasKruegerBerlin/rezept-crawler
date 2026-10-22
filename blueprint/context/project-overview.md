@@ -1,6 +1,6 @@
 # Recipe Crawler - Project Overview
 
-<!-- blueprint:source-hash ad420b6a3bb0614cc30074b0428abfa20d194d4a75eb58899d16f4c4fd0c3bc5 -->
+<!-- blueprint:source-hash d5066b448709e2b4ed977d013f8ba2cd2bd83b4333a745acc20f52d8e4c646aa -->
 
 > Local personal tool: enter the ingredients you have, get ranked German recipe suggestions you can cook now or with very few missing ingredients.
 
@@ -66,6 +66,10 @@ ingredients.
   to the most likely cooking meaning.
 - No results and AI also fails: clear German error message.
 - Quota exhausted: fallback rule applies; cached recipes still open.
+- Translation fails (Pro usage limit reached or `claude` CLI unavailable):
+  result titles, ingredients, and recipes are shown in English with a short
+  German note. Only a failed translation of the entered ingredients stops the
+  search with a German error message.
 - Favorite whose Spoonacular recipe is no longer cached: refetch and retranslate.
 
 ### Non-goals (MVP)
@@ -100,6 +104,8 @@ Ingredient lists, search history, and user data are **not** stored.
 - One file per Spoonacular recipe id holding one `RecipeDetail`.
 - Written the first time a recipe is opened; each recipe is fetched and
   translated only once.
+- Only successful German translations are cached, so an English fallback is
+  retranslated on the next open (derived from the translation-fallback rule).
 
 ### Favorite - `backend/data/favorites.json` (list)
 
@@ -117,13 +123,16 @@ Ingredient lists, search history, and user data are **not** stored.
 ### RecipeSummary (search result, not persisted)
 
 - `spoonacular_id` (int | null), `source` ("spoonacular" | "ai")
-- `title` (str, German), `image` (str | null), `ready_in_minutes` (int | null)
-- `used_ingredients`, `missing_ingredients` (list[str], German)
+- `title` (str), `image` (str | null), `ready_in_minutes` (int | null)
+- `used_ingredients`, `missing_ingredients` (list[str])
 - `missing_count` (int) - per business rule above
+- Text is German, or English when result translation failed.
 
 ### SearchResponse (not persisted)
 
 - `results` (list[RecipeSummary]) - ranked
+- `translated` (bool) - false when results are in English (translation failed);
+  the UI then shows a short German note
 - `ai_recipe` (RecipeDetail | null) - at most one
 - `live_unavailable` (bool) - Spoonacular failed, timed out, or quota exhausted
 
@@ -144,16 +153,21 @@ decided in a feature spec. Shape is not locked.
   `ignorePantry`); details via the recipe information endpoint with metric
   measures. Confirm exact parameters in Feature 1. Free tier has a small daily
   point quota, so caching matters.
-- **LLM**: Claude via the Anthropic Python SDK. Small fast (Haiku-class) model
-  for translation; stronger model for the fallback recipe. Model ids chosen in specs.
+- **LLM**: Claude via the Claude Code CLI in headless mode (`claude -p`),
+  authenticated with the owner's Claude Pro subscription - no extra API costs;
+  calls count against the Pro usage limit. Haiku for translation; a stronger
+  model for the fallback recipe. Models chosen in specs.
 - **Storage**: JSON files on disk (single user, no concurrency concerns).
-- **Secrets**: `SPOONACULAR_API_KEY`, `ANTHROPIC_API_KEY` in `backend/.env`, never committed.
+- **Secrets**: `SPOONACULAR_API_KEY` in `backend/.env`, never committed. No
+  Anthropic API key: `ANTHROPIC_API_KEY` must never reach the CLI subprocess,
+  or it bills the API instead of the subscription.
 - **Boundary**: the frontend never calls Spoonacular or Claude directly; all
   external calls go through the backend.
 
 ## Monetization
 
-None. Personal tool. Running costs: Spoonacular free tier and small Claude API usage.
+None. Personal tool. Running costs: Spoonacular free tier; Claude usage is
+covered by the existing Claude Pro subscription.
 
 ## UI/UX
 
@@ -174,8 +188,9 @@ photos carry the visual weight.
 ## Deployment
 
 Local only. Backend `uv run fastapi dev app/main.py` (port 8000), frontend
-`npm run dev` (port 5173). Requires `backend/.env` with both API keys. No
-hosting, domain, or CI requirement.
+`npm run dev` (port 5173). Requires `backend/.env` with `SPOONACULAR_API_KEY`
+and the `claude` CLI installed and logged in with the Pro account. No hosting,
+domain, or CI requirement.
 
 ## Open questions
 

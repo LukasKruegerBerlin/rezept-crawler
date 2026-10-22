@@ -63,6 +63,10 @@ Just me, as a personal tool running locally on my machine.
   the translation step resolves to the most likely cooking meaning
 - No results and AI also fails: clear German error message
 - Spoonacular quota exhausted: fallback rule above; cached recipes still open
+- Translation fails (Claude Pro usage limit reached or `claude` CLI
+  unavailable): result titles, ingredients, and recipes are shown in English
+  with a short German note; only if translating the entered ingredients fails
+  does the search show a clear German error message
 - Opening a favorite whose source recipe is no longer cached: refetch and
   retranslate
 
@@ -102,19 +106,21 @@ Not stored: ingredient lists, search history, any user data
   `maxReadyTime`, `ignorePantry`; recipe details via the recipe information
   endpoint with metric measures. Confirm exact parameters in the first feature
   spec. Free tier has a small daily point quota, so caching matters
-- **LLM**: Claude via the Anthropic Python SDK. A small fast model (Haiku class)
-  for translation; a stronger model for the fallback recipe. Exact model ids
-  chosen in the feature spec
+- **LLM**: Claude via the Claude Code CLI in headless mode (`claude -p`),
+  authenticated with my Claude Pro subscription, so there are no extra API
+  costs; calls count against the Pro usage limit. Haiku for translation; a
+  stronger model for the fallback recipe. Exact models chosen in the feature spec
 - **Storage**: JSON files on disk (single user, no concurrency concerns)
-- **Secrets**: `SPOONACULAR_API_KEY` and `ANTHROPIC_API_KEY` in
-  `backend/.env`, never committed
+- **Secrets**: `SPOONACULAR_API_KEY` in `backend/.env`, never committed. No
+  Anthropic API key: `ANTHROPIC_API_KEY` must not reach the CLI, otherwise it
+  bills the API instead of the subscription
 - The frontend never calls Spoonacular or Claude directly; all external calls
   go through the backend
 
 ## 6. Monetize - How will this make money?
 
-Not applicable. Personal tool. Running costs are Spoonacular (free tier) and
-small Claude API usage.
+Not applicable. Personal tool. Running costs are Spoonacular (free tier); Claude
+usage is covered by my existing Claude Pro subscription.
 
 ## 7. UI/UX - How should this look and feel?
 
@@ -138,7 +144,8 @@ Clean and minimal, German UI text throughout.
 
 Local only. Run the backend (`uv run fastapi dev app/main.py`, port 8000) and
 frontend (`npm run dev`, port 5173) dev servers. No hosting, no domain, no CI
-requirement.
+requirement. Requires the `claude` CLI installed and logged in with my Pro
+account.
 
 ## 9. Usage model and constraints
 
