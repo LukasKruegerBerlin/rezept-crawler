@@ -25,6 +25,9 @@ Just me, as a personal tool running locally on my machine.
 
 - **Ingredient search**: enter a fresh list of ingredients for each
   search; nothing about the list is persisted
+- **Ingredient autocomplete**: while typing, up to 5 previously translated
+  ingredients that start with the input are suggested; arrow keys and Enter
+  pick one, plain Enter adds the typed text unchanged
 - **Ranked results from Spoonacular**: recipes ordered by fewest missing
   ingredients, showing German title, image, cooking time, used and missing
   ingredients
@@ -93,7 +96,8 @@ Local JSON files under `backend/data/` (git-ignored):
 - **Translation dictionary** (`translations.json`): every German -> English
   ingredient translation and every English -> German title, ingredient name,
   and unit translation, so Claude is only asked for texts it has never
-  translated before (Claude calls are slow). Cooking steps are not included
+  translated before (Claude calls are slow). Cooking steps are not included.
+  Its German ingredient entries also feed the ingredient autocomplete
 - **Search result cache** (optional, decided in feature specs): to save
   Spoonacular quota for repeated searches
 

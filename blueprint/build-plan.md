@@ -10,6 +10,7 @@ Scaffolding the app (done) and prototyping are pre-build steps, not features.
 
 - [x] 1. **Ingredient search** - German ingredient chips input, translation to English via Claude, Spoonacular search, German result cards ranked by fewest missing ingredients with spices and pantry basics excluded; Tailwind set up as part of this slice
 - [x] 2. **Recipe detail** - open a result as a full German recipe (metric ingredients, steps), translated on demand and cached in local JSON
+- [ ] 7. **Ingredient autocomplete** - while typing an ingredient, suggest up to 5 previously translated ingredients (German entries of the translation dictionary) that start with the input; arrow keys and Enter pick a suggestion, plain Enter still adds the typed text as a chip
 - [ ] 3. **Cooking time filter** - limit results to a maximum ready time
 - [ ] 4. **AI fallback recipe** - one labelled Claude-generated German recipe when fewer than 3 results have 2 or fewer missing ingredients, or when Spoonacular is unavailable
 - [ ] 5. **Favorites** - save, list, open, and remove Spoonacular and AI recipes, stored in local JSON
