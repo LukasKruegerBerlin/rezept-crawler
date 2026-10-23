@@ -20,6 +20,9 @@ backend/data/
 # Blueprint generated state
 blueprint/.state/
 
+# Local Claude Code permissions
+.claude/settings.json
+
 # OS / editor
 .DS_Store
 .idea/
