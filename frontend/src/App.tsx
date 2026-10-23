@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import IngredientInput from './components/IngredientInput'
 import RecipeCard from './components/RecipeCard'
 import RecipeDetailDialog from './components/RecipeDetailDialog'
+import { useKnownIngredients } from './hooks/useKnownIngredients'
 import { useRecipeDetail } from './hooks/useRecipeDetail'
 import { type SearchState, useRecipeSearch } from './hooks/useRecipeSearch'
 
@@ -24,6 +25,7 @@ function statusText(state: SearchState): string {
 function App() {
   const [ingredients, setIngredients] = useState<string[]>([])
   const { state, search } = useRecipeSearch()
+  const known = useKnownIngredients()
   const detail = useRecipeDetail()
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   // Focus goes back to the card that opened the detail.
@@ -33,6 +35,12 @@ function App() {
     detailTrigger.current = trigger
     void detail.load(spoonacularId)
     setIsDetailOpen(true)
+  }
+
+  async function handleSearch(list: string[]) {
+    await search(list)
+    // The search may have translated new ingredients, even when it failed later.
+    void known.reload()
   }
 
   function closeDetail() {
@@ -52,7 +60,8 @@ function App() {
       <IngredientInput
         ingredients={ingredients}
         onChange={setIngredients}
-        onSearch={search}
+        knownIngredients={known.ingredients}
+        onSearch={(list) => void handleSearch(list)}
         isSearching={state.status === 'loading'}
       />
 

@@ -1,6 +1,6 @@
 # Recipe Crawler - Project Overview
 
-<!-- blueprint:source-hash 57ef6736481626dc2b139bd4c2e59713e729587f2b98ed4824f265b3195624d6 -->
+<!-- blueprint:source-hash 0ccbd7bb9ed4cdddc39441900dc706344a91911cfde0acb74eae75b996fbea29 -->
 
 > Local personal tool: enter the ingredients you have, get ranked German recipe suggestions you can cook now or with very few missing ingredients.
 
@@ -26,20 +26,25 @@ feta and onions" to a concrete German recipe in under a minute, without shopping
 
 ## Features
 
-Build-plan order (MVP). Headline: **1. Ingredient search**.
+Build-plan order (MVP). IDs are stable: item 7 was added later and is built
+after 2. Completion state lives in `build-plan.md`.
 
-1. **Ingredient search** - German ingredient chips, translated to English via
-   Claude, Spoonacular search, German result cards ranked by fewest missing
-   ingredients (spices and pantry basics excluded). Sets up Tailwind.
-2. **Recipe detail** - open a result as a full German recipe (metric
-   ingredients, steps), translated on demand and cached in local JSON.
-3. **Cooking time filter** - limit results to a maximum ready time
-   (e.g. <= 30 min) via Spoonacular `maxReadyTime`.
-4. **AI fallback recipe** - one labelled Claude-generated German recipe when API
-   results are weak or Spoonacular is unavailable.
-5. **Favorites** - save, list, open, remove Spoonacular and AI recipes in local JSON.
-6. **UI polish** - consistent minimal layout, loading/empty/error states,
-   keyboard accessibility across all views.
+- **1. Ingredient search** - German ingredient chips, translated to English via
+  Claude, Spoonacular search, German result cards ranked by fewest missing
+  ingredients (spices and pantry basics excluded). Sets up Tailwind.
+- **2. Recipe detail** - open a result as a full German recipe (metric
+  ingredients, steps), translated on demand and cached in local JSON.
+- **7. Ingredient autocomplete** - while typing, suggest up to 5 German
+  ingredients from the translation dictionary (`de_en` keys) that start with
+  the input; arrow keys + Enter pick a suggestion, plain Enter still adds the
+  typed text unchanged as a chip.
+- **3. Cooking time filter** - limit results to a maximum ready time
+  (e.g. <= 30 min) via Spoonacular `maxReadyTime`.
+- **4. AI fallback recipe** - one labelled Claude-generated German recipe when API
+  results are weak or Spoonacular is unavailable.
+- **5. Favorites** - save, list, open, remove Spoonacular and AI recipes in local JSON.
+- **6. UI polish** - consistent minimal layout, loading/empty/error states,
+  keyboard accessibility across all views.
 
 Later (not tracked yet): diet and intolerance filters; shopping list for missing
 ingredients; search relevance (with `sort=min-missing-ingredients` candidates
@@ -145,6 +150,8 @@ Ingredient lists, search history, and user data are **not** stored.
   search term.
 - `en_de` (dict[str, str]) - exact English text -> German, for recipe titles,
   ingredient names, and units (not cooking steps).
+- `de_en` keys also feed the ingredient autocomplete (Feature 7): prefix match,
+  at most 5 suggestions. Read-only use; autocomplete adds no new storage.
 - Filled from every successful translation (search and recipe detail); only
   unknown texts go to the `claude` CLI, so Claude calls stay as rare as possible.
 
@@ -186,7 +193,8 @@ covered by the existing Claude Pro subscription.
 Clean and minimal, German UI text throughout, light theme, generous whitespace;
 photos carry the visual weight.
 
-- **Main page**: ingredient chips input (type, Enter to add, x to remove) and
+- **Main page**: ingredient chips input (type, Enter to add, x to remove) with
+  an autocomplete list of up to 5 known ingredients (keyboard-selectable), and
   max-time filter at the top; recipe card grid below.
 - **Recipe card**: photo, German title, cooking time, "fehlt: x" missing count,
   used and missing ingredients. AI card visually distinct, labelled "KI-Vorschlag".
