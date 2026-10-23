@@ -4,6 +4,9 @@ type IngredientInputProps = {
   ingredients: string[]
   knownIngredients: string[]
   onChange: (ingredients: string[]) => void
+  /** Raw field text; '' means no time limit. */
+  maxReadyTime: string
+  onMaxReadyTimeChange: (value: string) => void
   onSearch: (ingredients: string[]) => void
   isSearching: boolean
 }
@@ -38,6 +41,8 @@ function IngredientInput({
   ingredients,
   knownIngredients,
   onChange,
+  maxReadyTime,
+  onMaxReadyTimeChange,
   onSearch,
   isSearching,
 }: IngredientInputProps) {
@@ -190,6 +195,28 @@ function IngredientInput({
         >
           {isSearching ? 'Suche läuft…' : 'Rezepte suchen'}
         </button>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="max-ready-time" className="text-sm font-medium text-stone-700">
+          Max. Kochzeit (Minuten)
+        </label>
+        {/* Native constraint validation blocks the submit for invalid values. */}
+        <input
+          id="max-ready-time"
+          type="number"
+          min={1}
+          max={1440}
+          step={1}
+          inputMode="numeric"
+          value={maxReadyTime}
+          onChange={(event) => onMaxReadyTimeChange(event.target.value)}
+          disabled={isSearching}
+          aria-describedby="max-ready-time-hint"
+          className="w-40 rounded-xl border border-stone-300 bg-white px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 disabled:bg-stone-100"
+        />
+        <p id="max-ready-time-hint" className="text-sm text-stone-500">
+          Leer lassen für keine Begrenzung
+        </p>
       </div>
     </form>
   )

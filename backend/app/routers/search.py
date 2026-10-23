@@ -24,6 +24,8 @@ Ingredient = Annotated[
 
 class SearchRequest(BaseModel):
     ingredients: list[Ingredient] = Field(min_length=1, max_length=20)
+    # Whole minutes; None means no limit. The upper bound is only a sanity check.
+    max_ready_time: int | None = Field(default=None, ge=1, le=1440)
 
 
 class RecipeSummary(BaseModel):
@@ -87,7 +89,9 @@ async def search(request: SearchRequest) -> SearchResponse:
 
     try:
         english = await _english_ingredients(request.ingredients)
-        recipes = rank_recipes(await search_by_ingredients(english))
+        recipes = rank_recipes(
+            await search_by_ingredients(english, request.max_ready_time)
+        )
     except SpoonacularQuotaError:
         raise HTTPException(503, "Das Spoonacular-Tageskontingent ist aufgebraucht.")
     except SpoonacularUnavailableError:

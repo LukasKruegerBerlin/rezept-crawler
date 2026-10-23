@@ -13,7 +13,11 @@ function statusText(state: SearchState): string {
     case 'loading':
       return 'Suche Rezepte…'
     case 'success':
-      if (state.results.length === 0) return 'Keine passenden Rezepte gefunden.'
+      if (state.results.length === 0) {
+        return state.maxReadyTime === null
+          ? 'Keine passenden Rezepte gefunden.'
+          : `Keine passenden Rezepte in höchstens ${state.maxReadyTime} Minuten gefunden.`
+      }
       return state.results.length === 1
         ? '1 Rezept gefunden.'
         : `${state.results.length} Rezepte gefunden.`
@@ -24,6 +28,8 @@ function statusText(state: SearchState): string {
 
 function App() {
   const [ingredients, setIngredients] = useState<string[]>([])
+  // Raw field text; '' means no limit. The form only submits valid whole minutes.
+  const [maxReadyTime, setMaxReadyTime] = useState('')
   const { state, search } = useRecipeSearch()
   const known = useKnownIngredients()
   const detail = useRecipeDetail()
@@ -38,7 +44,7 @@ function App() {
   }
 
   async function handleSearch(list: string[]) {
-    await search(list)
+    await search(list, maxReadyTime === '' ? null : Number(maxReadyTime))
     // The search may have translated new ingredients, even when it failed later.
     void known.reload()
   }
@@ -60,6 +66,8 @@ function App() {
       <IngredientInput
         ingredients={ingredients}
         onChange={setIngredients}
+        maxReadyTime={maxReadyTime}
+        onMaxReadyTimeChange={setMaxReadyTime}
         knownIngredients={known.ingredients}
         onSearch={(list) => void handleSearch(list)}
         isSearching={state.status === 'loading'}

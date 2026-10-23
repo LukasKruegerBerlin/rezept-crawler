@@ -44,19 +44,21 @@ async def _get_json(url: str, params: dict[str, str | int]) -> Any:
         raise SpoonacularUnavailableError from exc
 
 
-async def search_by_ingredients(ingredients: list[str]) -> list[dict[str, Any]]:
+async def search_by_ingredients(
+    ingredients: list[str], max_ready_time: int | None = None
+) -> list[dict[str, Any]]:
     """Return raw complexSearch results for English ingredient terms."""
-    body = await _get_json(
-        COMPLEX_SEARCH_URL,
-        {
-            "includeIngredients": ",".join(ingredients),
-            "fillIngredients": "true",
-            "addRecipeInformation": "true",
-            "sort": "min-missing-ingredients",
-            "ignorePantry": "true",
-            "number": RESULT_COUNT,
-        },
-    )
+    params: dict[str, str | int] = {
+        "includeIngredients": ",".join(ingredients),
+        "fillIngredients": "true",
+        "addRecipeInformation": "true",
+        "sort": "min-missing-ingredients",
+        "ignorePantry": "true",
+        "number": RESULT_COUNT,
+    }
+    if max_ready_time is not None:
+        params["maxReadyTime"] = max_ready_time
+    body = await _get_json(COMPLEX_SEARCH_URL, params)
     results = body.get("results") if isinstance(body, dict) else None
     if not isinstance(results, list):
         raise SpoonacularUnavailableError

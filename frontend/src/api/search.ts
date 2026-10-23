@@ -22,13 +22,18 @@ const FALLBACK_MESSAGE = 'Die Suche ist fehlgeschlagen.'
 /** Carries the backend's user-safe German `detail` message. */
 export class SearchError extends Error {}
 
-export async function searchRecipes(ingredients: string[]): Promise<SearchResponse> {
+/** `maxReadyTime` in minutes; null searches without a time limit. */
+export async function searchRecipes(
+  ingredients: string[],
+  maxReadyTime: number | null,
+): Promise<SearchResponse> {
+  const body = maxReadyTime === null ? { ingredients } : { ingredients, max_ready_time: maxReadyTime }
   let res: Response
   try {
     res = await fetch('/api/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ingredients }),
+      body: JSON.stringify(body),
     })
   } catch {
     throw new SearchError(FALLBACK_MESSAGE)
