@@ -108,7 +108,7 @@ Not stored: ingredient lists, search history, any user data
 - **Backend**: Python 3.13, FastAPI, managed with uv (scaffolded in `backend/`)
 - **Frontend**: React 19 + TypeScript + Vite, npm (scaffolded in `frontend/`),
   Vite dev proxy for `/api`
-- **Styling**: Tailwind CSS (to be added)
+- **Styling**: Tailwind CSS
 - **Recipe API**: Spoonacular. Planned endpoint `complexSearch` with
   `includeIngredients`, `fillIngredients`, `sort=min-missing-ingredients`,
   `maxReadyTime`, `ignorePantry`; recipe details via the recipe information

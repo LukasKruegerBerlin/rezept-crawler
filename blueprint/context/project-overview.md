@@ -1,6 +1,6 @@
 # Recipe Crawler - Project Overview
 
-<!-- blueprint:source-hash 0ccbd7bb9ed4cdddc39441900dc706344a91911cfde0acb74eae75b996fbea29 -->
+<!-- blueprint:source-hash 424549b55bfdf197509b8c0b53b1dd1bee7d4c3857a83a09ebf3c36a2f766b19 -->
 
 > Local personal tool: enter the ingredients you have, get ranked German recipe suggestions you can cook now or with very few missing ingredients.
 
