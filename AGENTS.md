@@ -212,6 +212,24 @@ conventions in `blueprint/context/` apply however a step is invoked. `/discovery
 is never required: users may write detailed plans directly or develop them
 through any conversation before running `/overview`.
 
+### Session recap after `/complete`
+
+After every finished `/complete` (work landed or pull request opened), write a
+recap of the session together with the user. This is part of the workflow, not
+optional.
+
+- Save it as `blueprint/history/recaps/<archive-name>.md`, using the same file
+  name as the work item's archive (for example `02-recipe-detail.md`).
+- Write it in German and not too technical. Focus on the steps taken and the
+  reasoning behind decisions, in chronological order.
+- Highlight the user's part: every idea, observation, objection, and decision
+  the user contributed goes in a `> **Dein Part:** ...` quote block, so the user
+  can retrace their own role later.
+- End with what is still open (for example an unapproved push or untested UI)
+  and the next build-plan item.
+- Show the recap in the chat, then offer one docs commit
+  (`docs: add recap for <work item>`). Committing still needs explicit approval.
+
 ### Automation
 
 Optional explicit-only skill: `autopilot` combines `feature` or `fix` with
