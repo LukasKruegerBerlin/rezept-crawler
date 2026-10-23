@@ -6,7 +6,8 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, StringConstraints
 
-from app.ranking import RankedRecipe, rank_recipes
+from app import glossary
+from app.ranking import rank_recipes
 from app.spoonacular import (
     SpoonacularQuotaError,
     SpoonacularUnavailableError,
@@ -42,22 +43,41 @@ class SearchResponse(BaseModel):
     translated: bool
 
 
-async def _german_texts(recipes: list[RankedRecipe]) -> dict[str, str] | None:
-    """Translate every title and ingredient name in one batched call.
+async def _english_ingredients(ingredients: list[str]) -> list[str]:
+    """English search terms in input order; only unknown ingredients go to the CLI.
 
-    Returns None when the translation fails, so the caller can fall back to English.
+    Raises TranslationError when the CLI is needed and fails.
     """
-    texts = list(
-        dict.fromkeys(
-            text
-            for r in recipes
-            for text in [r.title, *r.used_ingredients, *r.missing_ingredients]
-        )
-    )
+    known = glossary.load().de_en
+    keys = [glossary.german_key(i) for i in ingredients]
+    originals: dict[str, str] = {}
+    for key, ingredient in zip(keys, ingredients, strict=True):
+        if key not in known:
+            originals.setdefault(key, ingredient)
+    if originals:
+        english = await ingredients_to_english(list(originals.values()))
+        new = dict(zip(originals, english, strict=True))
+        glossary.add(de_en=new)
+        known = {**known, **new}
+    return [known[key] for key in keys]
+
+
+async def _german_texts(texts: list[str]) -> tuple[dict[str, str], bool]:
+    """German texts from the dictionary plus one CLI call for the unknown rest.
+
+    The flag is False when that call failed; unknown texts are then missing from
+    the dictionary and stay English.
+    """
+    known = glossary.load().en_de
+    unknown = list(dict.fromkeys(t for t in texts if t not in known))
+    if not unknown:
+        return known, True
     try:
-        return dict(zip(texts, await to_german(texts), strict=True))
+        new = dict(zip(unknown, await to_german(unknown), strict=True))
     except TranslationError:
-        return None
+        return known, False
+    glossary.add(en_de=new)
+    return {**known, **new}, True
 
 
 @router.post("/search")
@@ -66,7 +86,7 @@ async def search(request: SearchRequest) -> SearchResponse:
         raise HTTPException(500, "API-Schlüssel fehlt. Bitte backend/.env prüfen.")
 
     try:
-        english = await ingredients_to_english(request.ingredients)
+        english = await _english_ingredients(request.ingredients)
         recipes = rank_recipes(await search_by_ingredients(english))
     except SpoonacularQuotaError:
         raise HTTPException(503, "Das Spoonacular-Tageskontingent ist aufgebraucht.")
@@ -78,10 +98,17 @@ async def search(request: SearchRequest) -> SearchResponse:
     if not recipes:
         return SearchResponse(results=[], translated=True)
 
-    german = await _german_texts(recipes)
+    # Texts translated before (in any search or recipe) come from the dictionary.
+    german, translated = await _german_texts(
+        [
+            text
+            for r in recipes
+            for text in [r.title, *r.used_ingredients, *r.missing_ingredients]
+        ]
+    )
 
     def text(value: str) -> str:
-        return german[value] if german is not None else value
+        return german.get(value, value)
 
     return SearchResponse(
         results=[
@@ -96,5 +123,5 @@ async def search(request: SearchRequest) -> SearchResponse:
             )
             for r in recipes
         ],
-        translated=german is not None,
+        translated=translated,
     )

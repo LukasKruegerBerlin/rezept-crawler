@@ -90,8 +90,12 @@ Local JSON files under `backend/data/` (git-ignored):
 - **Translated recipe cache** (one file per Spoonacular recipe id): the German
   translation of a recipe's detail, so each recipe is fetched and translated
   only once
-- **Search/translation cache** (optional, decided in feature specs): to save
-  Spoonacular quota and LLM calls for repeated searches
+- **Translation dictionary** (`translations.json`): every German -> English
+  ingredient translation and every English -> German title, ingredient name,
+  and unit translation, so Claude is only asked for texts it has never
+  translated before (Claude calls are slow). Cooking steps are not included
+- **Search result cache** (optional, decided in feature specs): to save
+  Spoonacular quota for repeated searches
 
 Not stored: ingredient lists, search history, any user data
 

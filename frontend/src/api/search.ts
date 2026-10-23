@@ -1,3 +1,5 @@
+import { readDetail } from './errors'
+
 export type RecipeSummary = {
   source: 'spoonacular'
   spoonacular_id: number
@@ -19,19 +21,6 @@ const FALLBACK_MESSAGE = 'Die Suche ist fehlgeschlagen.'
 
 /** Carries the backend's user-safe German `detail` message. */
 export class SearchError extends Error {}
-
-async function readDetail(res: Response): Promise<string | null> {
-  try {
-    const body: unknown = await res.json()
-    if (typeof body === 'object' && body !== null && 'detail' in body) {
-      // FastAPI validation errors put a list here; only plain messages are shown.
-      return typeof body.detail === 'string' ? body.detail : null
-    }
-  } catch {
-    // Non-JSON error body: fall back to the generic message.
-  }
-  return null
-}
 
 export async function searchRecipes(ingredients: string[]): Promise<SearchResponse> {
   let res: Response

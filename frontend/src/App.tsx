@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import IngredientInput from './components/IngredientInput'
 import RecipeCard from './components/RecipeCard'
+import RecipeDetailDialog from './components/RecipeDetailDialog'
+import { useRecipeDetail } from './hooks/useRecipeDetail'
 import { type SearchState, useRecipeSearch } from './hooks/useRecipeSearch'
 
 function statusText(state: SearchState): string {
@@ -22,6 +24,21 @@ function statusText(state: SearchState): string {
 function App() {
   const [ingredients, setIngredients] = useState<string[]>([])
   const { state, search } = useRecipeSearch()
+  const detail = useRecipeDetail()
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  // Focus goes back to the card that opened the detail.
+  const detailTrigger = useRef<HTMLButtonElement | null>(null)
+
+  function openDetail(spoonacularId: number, trigger: HTMLButtonElement) {
+    detailTrigger.current = trigger
+    void detail.load(spoonacularId)
+    setIsDetailOpen(true)
+  }
+
+  function closeDetail() {
+    setIsDetailOpen(false)
+    detailTrigger.current?.focus()
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
@@ -60,12 +77,17 @@ function App() {
           <ul className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {state.results.map((recipe) => (
               <li key={recipe.spoonacular_id}>
-                <RecipeCard recipe={recipe} />
+                <RecipeCard
+                  recipe={recipe}
+                  onOpen={(trigger) => openDetail(recipe.spoonacular_id, trigger)}
+                />
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <RecipeDetailDialog open={isDetailOpen} state={detail.state} onClose={closeDetail} />
     </div>
   )
 }

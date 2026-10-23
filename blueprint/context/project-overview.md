@@ -1,6 +1,6 @@
 # Recipe Crawler - Project Overview
 
-<!-- blueprint:source-hash 8ba3bf8c66b3005e5de50ff74b83c319cc0014429bb6ab85ac93e19065f3f193 -->
+<!-- blueprint:source-hash 57ef6736481626dc2b139bd4c2e59713e729587f2b98ed4824f265b3195624d6 -->
 
 > Local personal tool: enter the ingredients you have, get ranked German recipe suggestions you can cook now or with very few missing ingredients.
 
@@ -44,7 +44,8 @@ Build-plan order (MVP). Headline: **1. Ingredient search**.
 Later (not tracked yet): diet and intolerance filters; shopping list for missing
 ingredients; search relevance (with `sort=min-missing-ingredients` candidates
 often use only 1-2 entered ingredients, `max-used-ingredients` tested better);
-search speed (~22 s per search, mostly the two `claude -p` calls).
+search speed (~22 s per search, mostly the two `claude -p` calls); correcting
+odd translations in the UI by editing translation-dictionary entries.
 
 ### Business rules
 
@@ -138,10 +139,19 @@ Ingredient lists, search history, and user data are **not** stored.
 - `ai_recipe` (RecipeDetail | null) - at most one
 - `live_unavailable` (bool) - Spoonacular failed, timed out, or quota exhausted
 
-### Search/translation cache (optional)
+### Translation dictionary - `backend/data/translations.json`
 
-Whether to cache search results or translations for repeated searches is
-decided in a feature spec. Shape is not locked.
+- `de_en` (dict[str, str]) - entered German ingredient (normalized) -> English
+  search term.
+- `en_de` (dict[str, str]) - exact English text -> German, for recipe titles,
+  ingredient names, and units (not cooking steps).
+- Filled from every successful translation (search and recipe detail); only
+  unknown texts go to the `claude` CLI, so Claude calls stay as rare as possible.
+
+### Search result cache (optional)
+
+Whether to cache search results to save Spoonacular quota is decided in a
+feature spec. Shape is not locked.
 
 > Lock `RecipeDetail` in Feature 2: favorites (5) and the AI fallback (4) reuse it.
 

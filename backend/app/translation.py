@@ -33,6 +33,14 @@ TO_GERMAN_PROMPT = (
     "translation per input, in the same order. Keep proper names that have no "
     "German equivalent."
 )
+TO_GERMAN_RECIPE_PROMPT = (
+    "You translate an English recipe into natural German as used in German "
+    "cookbooks. The input is a JSON list of recipe titles, ingredient names, "
+    'short measurement units (for example "Tbsp" is "EL", "tsp" is "TL") and '
+    "cooking steps. Return exactly one translation per input, in the same order. "
+    "Translate steps as complete German sentences and keep all numbers, "
+    "temperatures and times. Keep proper names that have no German equivalent."
+)
 
 
 class TranslationError(Exception):
@@ -103,3 +111,7 @@ async def ingredients_to_english(ingredients: list[str]) -> list[str]:
 
 async def to_german(texts: list[str]) -> list[str]:
     return await _translate(TO_GERMAN_PROMPT, texts)
+
+
+async def recipe_to_german(texts: list[str]) -> list[str]:
+    return await _translate(TO_GERMAN_RECIPE_PROMPT, texts)
