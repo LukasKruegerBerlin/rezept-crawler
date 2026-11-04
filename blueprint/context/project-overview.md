@@ -1,6 +1,6 @@
 # Recipe Crawler - Project Overview
 
-<!-- blueprint:source-hash 424549b55bfdf197509b8c0b53b1dd1bee7d4c3857a83a09ebf3c36a2f766b19 -->
+<!-- blueprint:source-hash 0af560b9fd22d1ffea3707e2687a27d6630f138383395144a945b89c8b05b64b -->
 
 > Local personal tool: enter the ingredients you have, get ranked German recipe suggestions you can cook now or with very few missing ingredients.
 
@@ -26,8 +26,8 @@ feta and onions" to a concrete German recipe in under a minute, without shopping
 
 ## Features
 
-Build-plan order (MVP). IDs are stable: item 7 was added later and is built
-after 2. Completion state lives in `build-plan.md`.
+Build-plan order (MVP). IDs are stable: items 7 and 8 were added later and are
+built after 2 and 4. Completion state lives in `build-plan.md`.
 
 - **1. Ingredient search** - German ingredient chips, translated to English via
   Claude, Spoonacular search, German result cards ranked by fewest missing
@@ -40,8 +40,13 @@ after 2. Completion state lives in `build-plan.md`.
   typed text unchanged as a chip.
 - **3. Cooking time filter** - limit results to a maximum ready time
   (e.g. <= 30 min) via Spoonacular `maxReadyTime`.
-- **4. AI fallback recipe** - one labelled Claude-generated German recipe when API
-  results are weak or Spoonacular is unavailable.
+- **4. AI fallback recipe** - one labelled Claude-generated German recipe,
+  generated only on request via a "KI-Rezept erstellen" button offered after
+  every search; highlighted in a message (with the found-recipe count) when
+  results are weak or Spoonacular is unavailable; still available after
+  browsing the results.
+- **8. Missing ingredients filter** - limit results to recipes with at most N
+  missing ingredients (missing count as defined below).
 - **5. Favorites** - save, list, open, remove Spoonacular and AI recipes in local JSON.
 - **6. UI polish** - consistent minimal layout, loading/empty/error states,
   keyboard accessibility across all views.
@@ -58,10 +63,13 @@ odd translations in the UI by editing translation-dictionary entries.
   (by Spoonacular classification) and pantry basics (water, salt, flour, etc.,
   ignored via `ignorePantry`). Spices stay listed in the recipe itself.
 - **Ranking**: ascending missing count; ties -> more of the user's ingredients used.
-- **AI fallback triggers** when either:
-  - fewer than 3 API recipes have missing count <= 2, or
-  - Spoonacular fails, times out, or quota is exhausted (results show a note
-    that live recipes are unavailable).
+- **AI recipe only on request**: never generated automatically. A "KI-Rezept
+  erstellen" button follows every search and is highlighted in a message when:
+  - fewer than 3 API recipes have missing count <= 2 (message states how many
+    recipes were found), or
+  - Spoonacular fails, times out, or quota is exhausted (message states that
+    live recipes are unavailable).
+- Found recipes stay browsable; the AI recipe can be requested afterwards.
 - **At most one AI recipe per search**, clearly labelled as AI-generated
   ("KI-Vorschlag"); uses only the entered ingredients plus spices and pantry basics.
 - **Translation**: German ingredients -> English for the search; result titles
@@ -72,8 +80,8 @@ odd translations in the UI by editing translation-dictionary entries.
 - Empty ingredient list: search disabled.
 - Ambiguous ingredient (e.g. "Paprika" vegetable vs spice): translation resolves
   to the most likely cooking meaning.
-- No results and AI also fails: clear German error message.
-- Quota exhausted: fallback rule applies; cached recipes still open.
+- AI generation fails: clear German error message; the request can be retried.
+- Quota exhausted: AI-on-request rule applies; cached recipes still open.
 - Translation fails (Pro usage limit reached or `claude` CLI unavailable):
   result titles, ingredients, and recipes are shown in English with a short
   German note. Only a failed translation of the entered ingredients stops the
@@ -141,8 +149,10 @@ Ingredient lists, search history, and user data are **not** stored.
 - `results` (list[RecipeSummary]) - ranked
 - `translated` (bool) - false when results are in English (translation failed);
   the UI then shows a short German note
-- `ai_recipe` (RecipeDetail | null) - at most one
 - `live_unavailable` (bool) - Spoonacular failed, timed out, or quota exhausted
+- The AI recipe (a `RecipeDetail` with `source = "ai"`, at most one per search)
+  is requested separately on demand. Exact request/response shape and the
+  weak-result signal are locked in the Feature 4 spec.
 
 ### Translation dictionary - `backend/data/translations.json`
 
@@ -194,8 +204,11 @@ Clean and minimal, German UI text throughout, light theme, generous whitespace;
 photos carry the visual weight.
 
 - **Main page**: ingredient chips input (type, Enter to add, x to remove) with
-  an autocomplete list of up to 5 known ingredients (keyboard-selectable), and
-  max-time filter at the top; recipe card grid below.
+  an autocomplete list of up to 5 known ingredients (keyboard-selectable),
+  max-time and missing-ingredients filters at the top; recipe card grid below.
+- **AI offer**: "KI-Rezept erstellen" button above the grid after every search,
+  inside a highlighted message when results are weak or live recipes are
+  unavailable.
 - **Recipe card**: photo, German title, cooking time, "fehlt: x" missing count,
   used and missing ingredients. AI card visually distinct, labelled "KI-Vorschlag".
 - **Detail view**: German ingredients and steps, favorite toggle. Page or modal

@@ -1,7 +1,11 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { RecipeDetail } from './api/recipes'
+import AiOffer from './components/AiOffer'
+import AiRecipeCard from './components/AiRecipeCard'
 import IngredientInput from './components/IngredientInput'
 import RecipeCard from './components/RecipeCard'
 import RecipeDetailDialog from './components/RecipeDetailDialog'
+import { useAiRecipe } from './hooks/useAiRecipe'
 import { useKnownIngredients } from './hooks/useKnownIngredients'
 import { useRecipeDetail } from './hooks/useRecipeDetail'
 import { type SearchState, useRecipeSearch } from './hooks/useRecipeSearch'
@@ -13,6 +17,7 @@ function statusText(state: SearchState): string {
     case 'loading':
       return 'Suche Rezepte…'
     case 'success':
+      if (state.liveUnavailable) return 'Live-Rezepte sind gerade nicht verfügbar.'
       if (state.results.length === 0) {
         return state.maxReadyTime === null
           ? 'Keine passenden Rezepte gefunden.'
@@ -33,9 +38,20 @@ function App() {
   const { state, search } = useRecipeSearch()
   const known = useKnownIngredients()
   const detail = useRecipeDetail()
+  const aiRecipe = useAiRecipe()
+  const generated = aiRecipe.state.status === 'success' ? aiRecipe.state.recipe : null
+  const aiCardButton = useRef<HTMLButtonElement>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   // Focus goes back to the card that opened the detail.
   const detailTrigger = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    // The offer button disappears with the result, which drops keyboard focus to the
+    // page; move it to the new card unless the user has focused something else meanwhile.
+    if (generated !== null && document.activeElement === document.body) {
+      aiCardButton.current?.focus()
+    }
+  }, [generated])
 
   function openDetail(spoonacularId: number, trigger: HTMLButtonElement) {
     detailTrigger.current = trigger
@@ -43,7 +59,15 @@ function App() {
     setIsDetailOpen(true)
   }
 
+  function openAiRecipe(recipe: RecipeDetail, trigger: HTMLButtonElement) {
+    detailTrigger.current = trigger
+    detail.show(recipe)
+    setIsDetailOpen(true)
+  }
+
   async function handleSearch(list: string[]) {
+    // Each search may get its own AI recipe; an old one (or a running request) is dropped.
+    aiRecipe.reset()
     await search(list, maxReadyTime === '' ? null : Number(maxReadyTime))
     // The search may have translated new ingredients, even when it failed later.
     void known.reload()
@@ -90,8 +114,28 @@ function App() {
             Übersetzung gerade nicht verfügbar – die Rezepte werden auf Englisch angezeigt.
           </p>
         )}
-        {state.status === 'success' && state.results.length > 0 && (
+        {state.status === 'success' && generated === null && (
+          <AiOffer
+            resultCount={state.results.length}
+            goodCount={state.goodCount}
+            goodMissingMax={state.goodMissingMax}
+            weakResults={state.weakResults}
+            liveUnavailable={state.liveUnavailable}
+            state={aiRecipe.state}
+            onGenerate={() => void aiRecipe.generate(state.ingredients, state.maxReadyTime)}
+          />
+        )}
+        {state.status === 'success' && (state.results.length > 0 || generated !== null) && (
           <ul className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {generated !== null && (
+              <li>
+                <AiRecipeCard
+                  recipe={generated}
+                  onOpen={(trigger) => openAiRecipe(generated, trigger)}
+                  buttonRef={aiCardButton}
+                />
+              </li>
+            )}
             {state.results.map((recipe) => (
               <li key={recipe.spoonacular_id}>
                 <RecipeCard

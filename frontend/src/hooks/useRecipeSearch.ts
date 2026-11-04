@@ -8,8 +8,13 @@ export type SearchState =
       status: 'success'
       results: RecipeSummary[]
       translated: boolean
-      /** The time limit this search used, for the empty-state text. */
+      /** The ingredients and time limit this search used (empty-state text, AI recipe). */
+      ingredients: string[]
       maxReadyTime: number | null
+      liveUnavailable: boolean
+      goodCount: number
+      goodMissingMax: number
+      weakResults: boolean
     }
   | { status: 'error'; message: string }
 
@@ -22,9 +27,19 @@ export function useRecipeSearch() {
     const requestId = ++latestRequest.current
     setState({ status: 'loading' })
     try {
-      const { results, translated } = await searchRecipes(ingredients, maxReadyTime)
+      const response = await searchRecipes(ingredients, maxReadyTime)
       if (requestId === latestRequest.current) {
-        setState({ status: 'success', results, translated, maxReadyTime })
+        setState({
+          status: 'success',
+          results: response.results,
+          translated: response.translated,
+          ingredients,
+          maxReadyTime,
+          liveUnavailable: response.live_unavailable,
+          goodCount: response.good_count,
+          goodMissingMax: response.good_missing_max,
+          weakResults: response.weak_results,
+        })
       }
     } catch (error) {
       if (requestId === latestRequest.current) {

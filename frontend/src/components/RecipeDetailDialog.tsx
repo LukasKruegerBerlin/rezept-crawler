@@ -43,7 +43,9 @@ function RecipeDetailDialog({ open, state, onClose }: RecipeDetailDialogProps) {
       className="m-auto max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-2xl bg-white p-0 text-stone-800 shadow-xl backdrop:bg-stone-900/50"
     >
       <div aria-busy={state.status === 'loading'}>
+        {/* AI recipes never have a photo, so they get no image area at all. */}
         {state.status === 'success' &&
+          state.recipe.source !== 'ai' &&
           (state.recipe.image ? (
             <img
               src={state.recipe.image}
@@ -91,8 +93,14 @@ function RecipeDetailDialog({ open, state, onClose }: RecipeDetailDialogProps) {
                 </p>
               )}
               {state.recipe.ready_in_minutes !== null && (
-                <p className="-mt-3 text-sm text-stone-600">
-                  {state.recipe.ready_in_minutes} Min.
+                <p className="-mt-3 flex items-center gap-3 text-sm text-stone-600">
+                  <span>{state.recipe.ready_in_minutes} Min.</span>
+                  {/* AI recipes always have a time, so the label always shows. */}
+                  {state.recipe.source === 'ai' && (
+                    <span className="rounded-full bg-emerald-700 px-2.5 py-0.5 font-medium text-white">
+                      KI-Vorschlag
+                    </span>
+                  )}
                 </p>
               )}
 

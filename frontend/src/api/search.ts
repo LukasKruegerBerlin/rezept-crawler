@@ -15,6 +15,14 @@ export type SearchResponse = {
   results: RecipeSummary[]
   /** False when the backend could not translate the results; texts are English. */
   translated: boolean
+  /** Spoonacular failed, timed out, or the quota is exhausted; results are empty. */
+  live_unavailable: boolean
+  /** Results with at most `good_missing_max` missing ingredients. */
+  good_count: number
+  /** The backend's rule behind `good_count`; the UI never hardcodes it. */
+  good_missing_max: number
+  /** Too few good results or no live recipes: highlight the AI recipe offer. */
+  weak_results: boolean
 }
 
 const FALLBACK_MESSAGE = 'Die Suche ist fehlgeschlagen.'

@@ -1,24 +1,16 @@
 """German <-> English translation via the Claude Code CLI (Claude Pro subscription)."""
 
-import asyncio
-import json
-import os
-import tempfile
+from app.claude_cli import ClaudeCliError, run_claude
 
 MODEL = "haiku"
 TIMEOUT_SECONDS = 60.0
 
-# Either variable would make the CLI bill the API instead of the subscription.
-API_CREDENTIAL_VARS = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")
-
-OUTPUT_SCHEMA = json.dumps(
-    {
-        "type": "object",
-        "properties": {"translations": {"type": "array", "items": {"type": "string"}}},
-        "required": ["translations"],
-        "additionalProperties": False,
-    }
-)
+OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {"translations": {"type": "array", "items": {"type": "string"}}},
+    "required": ["translations"],
+    "additionalProperties": False,
+}
 
 TO_ENGLISH_PROMPT = (
     "You translate German cooking ingredients into English search terms for a "
@@ -48,56 +40,19 @@ class TranslationError(Exception):
 
 
 async def _translate(system_prompt: str, items: list[str]) -> list[str]:
-    env = {k: v for k, v in os.environ.items() if k not in API_CREDENTIAL_VARS}
     try:
-        process = await asyncio.create_subprocess_exec(
-            "claude",
-            "-p",
-            "--model",
-            MODEL,
-            "--output-format",
-            "json",
-            "--json-schema",
-            OUTPUT_SCHEMA,
-            "--system-prompt",
-            system_prompt,
-            "--tools",
-            "",
-            "--no-session-persistence",
-            "--setting-sources",
-            "",
-            "--strict-mcp-config",
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-            env=env,
-            # Outside the repo, so no project CLAUDE.md is loaded into the prompt.
-            cwd=tempfile.gettempdir(),
+        output = await run_claude(
+            model=MODEL,
+            system_prompt=system_prompt,
+            schema=OUTPUT_SCHEMA,
+            payload=items,
+            timeout=TIMEOUT_SECONDS,
         )
-    except OSError as exc:
-        raise TranslationError from exc
-
-    try:
-        stdout, _ = await asyncio.wait_for(
-            process.communicate(json.dumps(items, ensure_ascii=False).encode()),
-            TIMEOUT_SECONDS,
-        )
-    except TimeoutError as exc:
-        process.kill()
-        await process.wait()
-        raise TranslationError from exc
-
-    if process.returncode != 0:
-        raise TranslationError
-    try:
-        result = json.loads(stdout)
-        translations = result["structured_output"]["translations"]
-    except (ValueError, KeyError, TypeError) as exc:
+        translations = output["translations"]
+    except (ClaudeCliError, KeyError, TypeError) as exc:
         raise TranslationError from exc
     if (
-        result.get("is_error")
-        or result.get("subtype") != "success"
-        or not isinstance(translations, list)
+        not isinstance(translations, list)
         or len(translations) != len(items)
         or not all(isinstance(t, str) for t in translations)
     ):

@@ -7,6 +7,11 @@ from typing import Any
 # Spoonacular files spices under this aisle; they never count as missing.
 SPICE_AISLE = "Spices and Seasonings"
 
+# Results are weak when fewer than GOOD_RESULTS_MIN recipes miss at most
+# GOOD_MISSING_MAX ingredients; the UI then highlights the AI recipe offer.
+GOOD_MISSING_MAX = 2
+GOOD_RESULTS_MIN = 3
+
 
 @dataclass
 class RankedRecipe:
@@ -47,3 +52,7 @@ def rank_recipes(results: list[dict[str, Any]]) -> list[RankedRecipe]:
     """Fewest missing first; ties go to more used ingredients, then Spoonacular order."""
     recipes = [to_ranked_recipe(r) for r in results]
     return sorted(recipes, key=lambda r: (r.missing_count, -len(r.used_ingredients)))
+
+
+def good_count(recipes: list[RankedRecipe]) -> int:
+    return sum(1 for r in recipes if r.missing_count <= GOOD_MISSING_MAX)

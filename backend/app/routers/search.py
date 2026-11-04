@@ -7,7 +7,12 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, StringConstraints
 
 from app import glossary
-from app.ranking import rank_recipes
+from app.ranking import (
+    GOOD_MISSING_MAX,
+    GOOD_RESULTS_MIN,
+    good_count,
+    rank_recipes,
+)
 from app.spoonacular import (
     SpoonacularQuotaError,
     SpoonacularUnavailableError,
@@ -43,6 +48,14 @@ class SearchResponse(BaseModel):
     results: list[RecipeSummary]
     # False when the result translation failed and the texts are English.
     translated: bool
+    # Spoonacular failed, timed out, or the quota is exhausted; results are empty.
+    live_unavailable: bool
+    # Results with at most good_missing_max missing ingredients.
+    good_count: int
+    # The rule behind good_count, so the UI text never repeats the number.
+    good_missing_max: int
+    # Too few good results or no live recipes: the UI highlights the AI offer.
+    weak_results: bool
 
 
 async def _english_ingredients(ingredients: list[str]) -> list[str]:
@@ -89,18 +102,34 @@ async def search(request: SearchRequest) -> SearchResponse:
 
     try:
         english = await _english_ingredients(request.ingredients)
-        recipes = rank_recipes(
-            await search_by_ingredients(english, request.max_ready_time)
-        )
-    except SpoonacularQuotaError:
-        raise HTTPException(503, "Das Spoonacular-Tageskontingent ist aufgebraucht.")
-    except SpoonacularUnavailableError:
-        raise HTTPException(502, "Live-Rezepte sind gerade nicht verfügbar.")
     except TranslationError:
         raise HTTPException(502, "Die Übersetzung ist fehlgeschlagen.")
 
+    try:
+        raw = await search_by_ingredients(english, request.max_ready_time)
+    except (SpoonacularQuotaError, SpoonacularUnavailableError):
+        # Not an error: the UI offers the AI recipe instead.
+        return SearchResponse(
+            results=[],
+            translated=True,
+            live_unavailable=True,
+            good_count=0,
+            good_missing_max=GOOD_MISSING_MAX,
+            weak_results=True,
+        )
+
+    recipes = rank_recipes(raw)
+    good = good_count(recipes)
+    weak = good < GOOD_RESULTS_MIN
     if not recipes:
-        return SearchResponse(results=[], translated=True)
+        return SearchResponse(
+            results=[],
+            translated=True,
+            live_unavailable=False,
+            good_count=good,
+            good_missing_max=GOOD_MISSING_MAX,
+            weak_results=weak,
+        )
 
     # Texts translated before (in any search or recipe) come from the dictionary.
     german, translated = await _german_texts(
@@ -128,4 +157,8 @@ async def search(request: SearchRequest) -> SearchResponse:
             for r in recipes
         ],
         translated=translated,
+        live_unavailable=False,
+        good_count=good,
+        good_missing_max=GOOD_MISSING_MAX,
+        weak_results=weak,
     )

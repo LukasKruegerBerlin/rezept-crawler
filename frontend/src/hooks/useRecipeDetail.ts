@@ -31,5 +31,11 @@ export function useRecipeDetail() {
     }
   }, [])
 
-  return { state, load }
+  /** Shows a recipe that is already loaded (the AI recipe), without a request. */
+  const show = useCallback((recipe: RecipeDetail) => {
+    ++latestRequest.current
+    setState({ status: 'success', recipe, translated: true })
+  }, [])
+
+  return { state, load, show }
 }

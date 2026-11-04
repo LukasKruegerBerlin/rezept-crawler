@@ -38,8 +38,11 @@ Just me, as a personal tool running locally on my machine.
 - **German recipe detail page**: full recipe (ingredients with metric amounts,
   steps) fetched and translated when opened, then cached locally
 - **Max cooking time filter**: e.g. only recipes ready in 30 minutes or less
-- **AI fallback recipe**: one Claude-generated German recipe
-  when the API results are weak or unavailable (rules in section 4)
+- **Missing ingredients filter**: only recipes with at most N missing
+  ingredients (missing count as defined in the business rules)
+- **AI recipe on request**: one Claude-generated German recipe, only generated
+  when I ask for it; offered after every search and highlighted when the API
+  results are weak or unavailable (rules below)
 - **Favorites**: save, list, open, and remove favorites, for both Spoonacular and
   AI-generated recipes
 
@@ -49,10 +52,15 @@ Just me, as a personal tool running locally on my machine.
   pantry basics
 - **Ranking**: ascending missing count; ties broken by more of my ingredients
   used
-- **AI fallback triggers** when either:
-  - fewer than 3 API recipes have a missing count of 2 or less, or
-  - Spoonacular fails, times out, or the daily quota is exhausted (the results
-    then show a note that live recipes are unavailable)
+- **AI recipe is never generated automatically.** After every search a
+  "KI-Rezept erstellen" button is offered. It is highlighted in a message when
+  either:
+  - fewer than 3 API recipes have a missing count of 2 or less (the message
+    states how many recipes were found), or
+  - Spoonacular fails, times out, or the daily quota is exhausted (the message
+    states that live recipes are unavailable)
+- The found recipes stay browsable; the AI recipe can still be requested after
+  looking at them
 - At most one AI recipe per search. It is clearly labelled as AI-generated and
   uses only the entered ingredients plus spices and pantry basics
 - Translation: German ingredients are translated to English for the search;
@@ -64,8 +72,8 @@ Just me, as a personal tool running locally on my machine.
 - Empty ingredient list: search is disabled
 - Unrecognized or ambiguous ingredient (e.g. "Paprika" as vegetable vs spice):
   the translation step resolves to the most likely cooking meaning
-- No results and AI also fails: clear German error message
-- Spoonacular quota exhausted: fallback rule above; cached recipes still open
+- AI generation fails: clear German error message; the request can be retried
+- Spoonacular quota exhausted: AI recipe rule above; cached recipes still open
 - Translation fails (Claude Pro usage limit reached or `claude` CLI
   unavailable): result titles, ingredients, and recipes are shown in English
   with a short German note; only if translating the entered ingredients fails
@@ -135,7 +143,10 @@ usage is covered by my existing Claude Pro subscription.
 Clean and minimal, German UI text throughout.
 
 - Single main page: ingredient input as chips (type, Enter to add, x to remove)
-  plus the max-time filter at the top, recipe cards grid below
+  plus the max-time and missing-ingredients filters at the top, recipe cards
+  grid below
+- Above the grid: the "KI-Rezept erstellen" button, inside a highlighted
+  message when results are weak or live recipes are unavailable
 - Cards: food photo, German title, cooking time, "fehlt: x" missing count, used
   and missing ingredients
 - AI recipe card visually distinct and labelled (e.g. "KI-Vorschlag")
