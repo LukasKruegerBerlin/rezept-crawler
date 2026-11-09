@@ -1,10 +1,15 @@
 import type { AiRecipeState } from '../hooks/useAiRecipe'
+import { missingPhrase } from '../missingFilter'
 
 type AiOfferProps = {
   /** Total Spoonacular results of the search. */
   resultCount: number
   goodCount: number
   goodMissingMax: number
+  /** Missing ingredients filter; null when not set. */
+  maxMissing: number | null
+  /** Results left after the missing ingredients filter. */
+  visibleCount: number
   weakResults: boolean
   liveUnavailable: boolean
   state: AiRecipeState
@@ -17,10 +22,17 @@ function offerText({
   resultCount,
   goodCount,
   goodMissingMax,
+  maxMissing,
+  visibleCount,
   liveUnavailable,
-}: Pick<AiOfferProps, 'resultCount' | 'goodCount' | 'goodMissingMax' | 'liveUnavailable'>): string {
-  // The status line above already says that nothing was found, so only ask.
+}: Omit<AiOfferProps, 'weakResults' | 'state' | 'onGenerate'>): string {
+  // The status line above already says that nothing was found or shown, so only ask.
   if (liveUnavailable || resultCount === 0) return QUESTION
+  if (maxMissing !== null) {
+    if (visibleCount === 0) return QUESTION
+    const shown = visibleCount === 1 ? '1 Rezept' : `${visibleCount} Rezepte`
+    return `${shown} ${missingPhrase(maxMissing)} gefunden. ${QUESTION}`
+  }
   const found = resultCount === 1 ? '1 Rezept gefunden' : `${resultCount} Rezepte gefunden`
   return `${found}, davon ${goodCount} mit höchstens ${goodMissingMax} fehlenden Zutaten. ${QUESTION}`
 }

@@ -59,6 +59,10 @@ Just me, as a personal tool running locally on my machine.
     states how many recipes were found), or
   - Spoonacular fails, times out, or the daily quota is exhausted (the message
     states that live recipes are unavailable)
+- When the missing ingredients filter is set, the "fewer than 3" threshold
+  counts the recipes shown after the filter instead (fewer than 3 visible
+  cards), and the message states that number. Without the filter, the
+  "missing count of 2 or less" rule above applies
 - The found recipes stay browsable; the AI recipe can still be requested after
   looking at them
 - At most one AI recipe per search. It is clearly labelled as AI-generated and
@@ -94,7 +98,8 @@ Just me, as a personal tool running locally on my machine.
 
 Local JSON files under `backend/data/` (git-ignored):
 
-- **Favorites** (`favorites.json`): list of saved recipes with source
+- **Favorites** (`favorites.json`): list of saved recipes with a stable
+  favorite id (used to open and remove it, also for AI favorites), source
   (`spoonacular` or `ai`), Spoonacular id when applicable, German title, saved
   date. AI favorites store the full generated recipe, because it cannot be
   refetched
@@ -178,3 +183,4 @@ account.
 - Exact search result count to fetch for local re-ranking
 - Whether search results are cached in addition to recipe details
 - Detail as separate route or modal
+- Form of the favorite id (decided in the Favorites spec)

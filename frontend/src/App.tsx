@@ -9,8 +9,19 @@ import { useAiRecipe } from './hooks/useAiRecipe'
 import { useKnownIngredients } from './hooks/useKnownIngredients'
 import { useRecipeDetail } from './hooks/useRecipeDetail'
 import { type SearchState, useRecipeSearch } from './hooks/useRecipeSearch'
+import { missingPhrase, parseMaxMissing } from './missingFilter'
 
-function statusText(state: SearchState): string {
+function filteredText(found: number, visible: number, maxMissing: number): string {
+  const phrase = missingPhrase(maxMissing)
+  if (visible === 0) {
+    return found === 1
+      ? `Das gefundene Rezept kommt nicht ${phrase} aus.`
+      : `Keines der ${found} gefundenen Rezepte kommt ${phrase} aus.`
+  }
+  return `${visible} von ${found} ${found === 1 ? 'Rezept' : 'Rezepten'} ${phrase}.`
+}
+
+function statusText(state: SearchState, maxMissing: number | null, visible: number): string {
   switch (state.status) {
     case 'idle':
       return 'Gib deine Zutaten ein und starte die Suche.'
@@ -23,6 +34,7 @@ function statusText(state: SearchState): string {
           ? 'Keine passenden Rezepte gefunden.'
           : `Keine passenden Rezepte in höchstens ${state.maxReadyTime} Minuten gefunden.`
       }
+      if (maxMissing !== null) return filteredText(state.results.length, visible, maxMissing)
       return state.results.length === 1
         ? '1 Rezept gefunden.'
         : `${state.results.length} Rezepte gefunden.`
@@ -35,7 +47,21 @@ function App() {
   const [ingredients, setIngredients] = useState<string[]>([])
   // Raw field text; '' means no limit. The form only submits valid whole minutes.
   const [maxReadyTime, setMaxReadyTime] = useState('')
+  // Raw field text; filters the current results live, without a new search.
+  const [maxMissingText, setMaxMissingText] = useState('')
+  const maxMissing = parseMaxMissing(maxMissingText)
   const { state, search } = useRecipeSearch()
+  const visibleResults =
+    state.status !== 'success'
+      ? []
+      : maxMissing === null
+        ? state.results
+        : state.results.filter((recipe) => recipe.missing_count <= maxMissing)
+  // With the filter set, "too few results" means too few visible cards.
+  const weakResults =
+    state.status === 'success' &&
+    (state.liveUnavailable ||
+      (maxMissing === null ? state.weakResults : visibleResults.length < state.goodResultsMin))
   const known = useKnownIngredients()
   const detail = useRecipeDetail()
   const aiRecipe = useAiRecipe()
@@ -92,6 +118,8 @@ function App() {
         onChange={setIngredients}
         maxReadyTime={maxReadyTime}
         onMaxReadyTimeChange={setMaxReadyTime}
+        maxMissing={maxMissingText}
+        onMaxMissingChange={setMaxMissingText}
         knownIngredients={known.ingredients}
         onSearch={(list) => void handleSearch(list)}
         isSearching={state.status === 'loading'}
@@ -99,7 +127,7 @@ function App() {
 
       <section className="mt-10" aria-busy={state.status === 'loading'}>
         <p role="status" className="text-stone-600">
-          {statusText(state)}
+          {statusText(state, maxMissing, visibleResults.length)}
         </p>
         {state.status === 'error' && (
           <p
@@ -119,13 +147,15 @@ function App() {
             resultCount={state.results.length}
             goodCount={state.goodCount}
             goodMissingMax={state.goodMissingMax}
-            weakResults={state.weakResults}
+            maxMissing={maxMissing}
+            visibleCount={visibleResults.length}
+            weakResults={weakResults}
             liveUnavailable={state.liveUnavailable}
             state={aiRecipe.state}
             onGenerate={() => void aiRecipe.generate(state.ingredients, state.maxReadyTime)}
           />
         )}
-        {state.status === 'success' && (state.results.length > 0 || generated !== null) && (
+        {state.status === 'success' && (visibleResults.length > 0 || generated !== null) && (
           <ul className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {generated !== null && (
               <li>
@@ -136,7 +166,7 @@ function App() {
                 />
               </li>
             )}
-            {state.results.map((recipe) => (
+            {visibleResults.map((recipe) => (
               <li key={recipe.spoonacular_id}>
                 <RecipeCard
                   recipe={recipe}

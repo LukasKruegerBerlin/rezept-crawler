@@ -7,6 +7,9 @@ type IngredientInputProps = {
   /** Raw field text; '' means no time limit. */
   maxReadyTime: string
   onMaxReadyTimeChange: (value: string) => void
+  /** Raw field text; '' means no missing ingredients filter. Applied live to the results. */
+  maxMissing: string
+  onMaxMissingChange: (value: string) => void
   onSearch: (ingredients: string[]) => void
   isSearching: boolean
 }
@@ -43,6 +46,8 @@ function IngredientInput({
   onChange,
   maxReadyTime,
   onMaxReadyTimeChange,
+  maxMissing,
+  onMaxMissingChange,
   onSearch,
   isSearching,
 }: IngredientInputProps) {
@@ -196,27 +201,50 @@ function IngredientInput({
           {isSearching ? 'Suche läuft…' : 'Rezepte suchen'}
         </button>
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="max-ready-time" className="text-sm font-medium text-stone-700">
-          Max. Kochzeit (Minuten)
-        </label>
-        {/* Native constraint validation blocks the submit for invalid values. */}
-        <input
-          id="max-ready-time"
-          type="number"
-          min={1}
-          max={1440}
-          step={1}
-          inputMode="numeric"
-          value={maxReadyTime}
-          onChange={(event) => onMaxReadyTimeChange(event.target.value)}
-          disabled={isSearching}
-          aria-describedby="max-ready-time-hint"
-          className="w-40 rounded-xl border border-stone-300 bg-white px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 disabled:bg-stone-100"
-        />
-        <p id="max-ready-time-hint" className="text-sm text-stone-500">
-          Leer lassen für keine Begrenzung
-        </p>
+      <div className="flex flex-wrap gap-x-8 gap-y-4">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="max-ready-time" className="text-sm font-medium text-stone-700">
+            Max. Kochzeit (Minuten)
+          </label>
+          {/* Native constraint validation blocks the submit for invalid values. */}
+          <input
+            id="max-ready-time"
+            type="number"
+            min={1}
+            max={1440}
+            step={1}
+            inputMode="numeric"
+            value={maxReadyTime}
+            onChange={(event) => onMaxReadyTimeChange(event.target.value)}
+            disabled={isSearching}
+            aria-describedby="max-ready-time-hint"
+            className="w-40 rounded-xl border border-stone-300 bg-white px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 disabled:bg-stone-100"
+          />
+          <p id="max-ready-time-hint" className="text-sm text-stone-500">
+            Leer lassen für keine Begrenzung
+          </p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="max-missing" className="text-sm font-medium text-stone-700">
+            Max. fehlende Zutaten
+          </label>
+          {/* Filters the shown results live, so it stays enabled during a search. */}
+          <input
+            id="max-missing"
+            type="number"
+            min={0}
+            max={20}
+            step={1}
+            inputMode="numeric"
+            value={maxMissing}
+            onChange={(event) => onMaxMissingChange(event.target.value)}
+            aria-describedby="max-missing-hint"
+            className="w-40 rounded-xl border border-stone-300 bg-white px-3 py-2 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+          />
+          <p id="max-missing-hint" className="text-sm text-stone-500">
+            Leer lassen für keine Begrenzung
+          </p>
+        </div>
       </div>
     </form>
   )

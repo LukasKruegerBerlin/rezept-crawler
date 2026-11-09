@@ -15,6 +15,7 @@ export type SearchState =
       goodCount: number
       goodMissingMax: number
       weakResults: boolean
+      goodResultsMin: number
     }
   | { status: 'error'; message: string }
 
@@ -39,6 +40,7 @@ export function useRecipeSearch() {
           goodCount: response.good_count,
           goodMissingMax: response.good_missing_max,
           weakResults: response.weak_results,
+          goodResultsMin: response.good_results_min,
         })
       }
     } catch (error) {

@@ -56,6 +56,9 @@ class SearchResponse(BaseModel):
     good_missing_max: int
     # Too few good results or no live recipes: the UI highlights the AI offer.
     weak_results: bool
+    # The "fewer than" threshold behind weak_results; the UI reuses it when the
+    # missing ingredients filter is set.
+    good_results_min: int
 
 
 async def _english_ingredients(ingredients: list[str]) -> list[str]:
@@ -115,6 +118,7 @@ async def search(request: SearchRequest) -> SearchResponse:
             live_unavailable=True,
             good_count=0,
             good_missing_max=GOOD_MISSING_MAX,
+            good_results_min=GOOD_RESULTS_MIN,
             weak_results=True,
         )
 
@@ -128,6 +132,7 @@ async def search(request: SearchRequest) -> SearchResponse:
             live_unavailable=False,
             good_count=good,
             good_missing_max=GOOD_MISSING_MAX,
+            good_results_min=GOOD_RESULTS_MIN,
             weak_results=weak,
         )
 
@@ -160,5 +165,6 @@ async def search(request: SearchRequest) -> SearchResponse:
         live_unavailable=False,
         good_count=good,
         good_missing_max=GOOD_MISSING_MAX,
+        good_results_min=GOOD_RESULTS_MIN,
         weak_results=weak,
     )

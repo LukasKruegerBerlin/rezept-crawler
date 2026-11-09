@@ -1,6 +1,6 @@
 # Recipe Crawler - Project Overview
 
-<!-- blueprint:source-hash 0af560b9fd22d1ffea3707e2687a27d6630f138383395144a945b89c8b05b64b -->
+<!-- blueprint:source-hash 0d2e1dd6bcb36440dd63af14f59fabd61df28ecd431dbd2e990d71191a749c53 -->
 
 > Local personal tool: enter the ingredients you have, get ranked German recipe suggestions you can cook now or with very few missing ingredients.
 
@@ -40,7 +40,7 @@ built after 2 and 4. Completion state lives in `build-plan.md`.
   typed text unchanged as a chip.
 - **3. Cooking time filter** - limit results to a maximum ready time
   (e.g. <= 30 min) via Spoonacular `maxReadyTime`.
-- **4. AI fallback recipe** - one labelled Claude-generated German recipe,
+- **4. AI recipe on request** - one labelled Claude-generated German recipe,
   generated only on request via a "KI-Rezept erstellen" button offered after
   every search; highlighted in a message (with the found-recipe count) when
   results are weak or Spoonacular is unavailable; still available after
@@ -69,6 +69,10 @@ odd translations in the UI by editing translation-dictionary entries.
     recipes were found), or
   - Spoonacular fails, times out, or quota is exhausted (message states that
     live recipes are unavailable).
+- With the missing ingredients filter (Feature 8) set, the "fewer than 3"
+  threshold counts the recipes **shown after the filter** (fewer than 3
+  visible cards) and the message states that number. Without the filter, the
+  "missing count <= 2" rule above applies.
 - Found recipes stay browsable; the AI recipe can be requested afterwards.
 - **At most one AI recipe per search**, clearly labelled as AI-generated
   ("KI-Vorschlag"); uses only the entered ingredients plus spices and pantry basics.
@@ -125,7 +129,7 @@ Ingredient lists, search history, and user data are **not** stored.
 
 ### Favorite - `backend/data/favorites.json` (list)
 
-- `id` (str) - stable key for open/remove
+- `id` (str) - stable favorite id for open/remove, also for AI favorites
 - `source` ("spoonacular" | "ai")
 - `spoonacular_id` (int | null)
 - `title` (str) - German
@@ -133,8 +137,7 @@ Ingredient lists, search history, and user data are **not** stored.
 - `recipe` (RecipeDetail | null) - required for `ai` (cannot be refetched);
   null for `spoonacular` (opened via the recipe cache)
 
-> TODO: the plan names no favorite key. `id` is needed to remove AI favorites;
-> confirm its form in the Favorites spec.
+> The form of `id` is decided in the Favorites spec (Feature 5).
 
 ### RecipeSummary (search result, not persisted)
 
@@ -152,7 +155,7 @@ Ingredient lists, search history, and user data are **not** stored.
 - `live_unavailable` (bool) - Spoonacular failed, timed out, or quota exhausted
 - The AI recipe (a `RecipeDetail` with `source = "ai"`, at most one per search)
   is requested separately on demand. Exact request/response shape and the
-  weak-result signal are locked in the Feature 4 spec.
+  weak-result signal were locked in the Feature 4 spec.
 
 ### Translation dictionary - `backend/data/translations.json`
 
@@ -233,4 +236,4 @@ Deferred to feature specs by the plan:
 - How many search results to fetch for local re-ranking.
 - Whether search results are cached in addition to recipe details.
 - Detail view as separate route or modal.
-- Favorite `id` form (see Data model).
+- Form of the favorite `id` (Favorites spec).

@@ -23,6 +23,8 @@ export type SearchResponse = {
   good_missing_max: number
   /** Too few good results or no live recipes: highlight the AI recipe offer. */
   weak_results: boolean
+  /** The "fewer than" threshold behind `weak_results`; reused for the filtered count. */
+  good_results_min: number
 }
 
 const FALLBACK_MESSAGE = 'Die Suche ist fehlgeschlagen.'
