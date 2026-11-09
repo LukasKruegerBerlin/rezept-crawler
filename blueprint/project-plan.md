@@ -89,6 +89,9 @@ Just me, as a personal tool running locally on my machine.
 
 - Diet and intolerance filters (later)
 - Shopping list for missing ingredients (later)
+- Better search relevance via `sort=max-used-ingredients` (later)
+- Faster search: fewer or faster `claude -p` calls (later)
+- Correcting translations in the UI by editing dictionary entries (later)
 - Saved pantry or "always available" list (spice/pantry rules cover this)
 - Accounts, multi-user, hosting
 - Crawling recipe websites or importing datasets
@@ -122,15 +125,17 @@ Not stored: ingredient lists, search history, any user data
 - **Frontend**: React 19 + TypeScript + Vite, npm (scaffolded in `frontend/`),
   Vite dev proxy for `/api`
 - **Styling**: Tailwind CSS
-- **Recipe API**: Spoonacular. Planned endpoint `complexSearch` with
+- **Recipe API**: Spoonacular. Endpoint `complexSearch` with
   `includeIngredients`, `fillIngredients`, `sort=min-missing-ingredients`,
-  `maxReadyTime`, `ignorePantry`; recipe details via the recipe information
-  endpoint with metric measures. Confirm exact parameters in the first feature
-  spec. Free tier has a small daily point quota, so caching matters
+  `maxReadyTime`, `ignorePantry`, and `number=20` (fetched for local
+  re-ranking); recipe details via the recipe information endpoint with metric
+  measures. `sort=max-used-ingredients` tested better for relevance; switching
+  is a later build-plan item. Free tier has a small daily point quota, so
+  caching matters
 - **LLM**: Claude via the Claude Code CLI in headless mode (`claude -p`),
   authenticated with my Claude Pro subscription, so there are no extra API
-  costs; calls count against the Pro usage limit. Haiku for translation; a
-  stronger model for the fallback recipe. Exact models chosen in the feature spec
+  costs; calls count against the Pro usage limit. Model alias `haiku` for
+  translation, `sonnet` for the AI recipe
 - **Storage**: JSON files on disk (single user, no concurrency concerns)
 - **Secrets**: `SPOONACULAR_API_KEY` in `backend/.env`, never committed. No
   Anthropic API key: `ANTHROPIC_API_KEY` must not reach the CLI, otherwise it
@@ -155,8 +160,8 @@ Clean and minimal, German UI text throughout.
 - Cards: food photo, German title, cooking time, "fehlt: x" missing count, used
   and missing ingredients
 - AI recipe card visually distinct and labelled (e.g. "KI-Vorschlag")
-- Detail view for a recipe (page or modal, decided in the feature spec) with German
-  ingredients and steps, and a favorite toggle
+- Detail view for a recipe as a modal, with German ingredients and steps, and
+  a favorite toggle
 - Favorites reachable from the header
 - Light theme, generous whitespace; photos carry the visual weight
 - Every request shows loading, empty, and error states; translation can take a
@@ -179,8 +184,5 @@ account.
 
 ## Open decisions (safe to defer to feature specs)
 
-- Exact Claude model ids and prompt format for translation
-- Exact search result count to fetch for local re-ranking
 - Whether search results are cached in addition to recipe details
-- Detail as separate route or modal
 - Form of the favorite id (decided in the Favorites spec)

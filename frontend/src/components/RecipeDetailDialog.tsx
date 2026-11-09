@@ -2,10 +2,19 @@ import { type MouseEvent, useEffect, useRef } from 'react'
 import type { IngredientLine } from '../api/recipes'
 import type { RecipeDetailState } from '../hooks/useRecipeDetail'
 
+export type FavoriteToggle = {
+  saved: boolean
+  busy: boolean
+  error: string | null
+  onToggle: () => void
+}
+
 type RecipeDetailDialogProps = {
   open: boolean
   state: RecipeDetailState
   onClose: () => void
+  /** Shown only for a loaded recipe. */
+  favorite: FavoriteToggle | null
 }
 
 const TITLE_ID = 'recipe-detail-title'
@@ -17,7 +26,7 @@ function ingredientText({ amount, unit, name }: IngredientLine): string {
     .join(' ')
 }
 
-function RecipeDetailDialog({ open, state, onClose }: RecipeDetailDialogProps) {
+function RecipeDetailDialog({ open, state, onClose, favorite }: RecipeDetailDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -61,14 +70,36 @@ function RecipeDetailDialog({ open, state, onClose }: RecipeDetailDialogProps) {
             <h2 id={TITLE_ID} className="text-2xl font-semibold tracking-tight text-stone-900">
               {title}
             </h2>
-            <button
-              type="button"
-              onClick={() => dialogRef.current?.close()}
-              className="shrink-0 rounded-xl px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-stone-300 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
-            >
-              Schließen
-            </button>
+            <div className="flex shrink-0 flex-wrap justify-end gap-2">
+              {state.status === 'success' && favorite !== null && (
+                <button
+                  type="button"
+                  aria-pressed={favorite.saved}
+                  disabled={favorite.busy}
+                  onClick={favorite.onToggle}
+                  className="rounded-xl px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-stone-300 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50 aria-pressed:bg-emerald-50 aria-pressed:text-emerald-900 aria-pressed:ring-emerald-300"
+                >
+                  {favorite.saved ? 'Gespeichert – entfernen' : 'Als Favorit speichern'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => dialogRef.current?.close()}
+                className="shrink-0 rounded-xl px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-stone-300 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+              >
+                Schließen
+              </button>
+            </div>
           </div>
+
+          {state.status === 'success' && favorite?.error && (
+            <p
+              role="alert"
+              className="-mt-3 rounded-xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-200"
+            >
+              {favorite.error}
+            </p>
+          )}
 
           {state.status === 'loading' && (
             <p role="status" className="text-stone-600">

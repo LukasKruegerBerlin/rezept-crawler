@@ -1,6 +1,6 @@
 # Recipe Crawler - Project Overview
 
-<!-- blueprint:source-hash 0d2e1dd6bcb36440dd63af14f59fabd61df28ecd431dbd2e990d71191a749c53 -->
+<!-- blueprint:source-hash 50604b54481b037d98d1210569e28f95e2b803b2a793d4c63ac41e2e9ae1be54 -->
 
 > Local personal tool: enter the ingredients you have, get ranked German recipe suggestions you can cook now or with very few missing ingredients.
 
@@ -182,13 +182,14 @@ feature spec. Shape is not locked.
 - **Styling**: Tailwind CSS (added in Feature 1).
 - **Recipe API**: Spoonacular `complexSearch` (`includeIngredients`,
   `fillIngredients`, `sort=min-missing-ingredients`, `maxReadyTime`,
-  `ignorePantry`); details via the recipe information endpoint with metric
-  measures. Confirm exact parameters in Feature 1. Free tier has a small daily
-  point quota, so caching matters.
+  `ignorePantry`, `number=20` for local re-ranking); details via the recipe
+  information endpoint with metric measures. `sort=max-used-ingredients`
+  tested better for relevance; switching is a Later item. Free tier has a
+  small daily point quota, so caching matters.
 - **LLM**: Claude via the Claude Code CLI in headless mode (`claude -p`),
   authenticated with the owner's Claude Pro subscription - no extra API costs;
-  calls count against the Pro usage limit. Haiku for translation; a stronger
-  model for the fallback recipe. Models chosen in specs.
+  calls count against the Pro usage limit. Model alias `haiku` for
+  translation, `sonnet` for the AI recipe.
 - **Storage**: JSON files on disk (single user, no concurrency concerns).
 - **Secrets**: `SPOONACULAR_API_KEY` in `backend/.env`, never committed. No
   Anthropic API key: `ANTHROPIC_API_KEY` must never reach the CLI subprocess,
@@ -214,8 +215,7 @@ photos carry the visual weight.
   unavailable.
 - **Recipe card**: photo, German title, cooking time, "fehlt: x" missing count,
   used and missing ingredients. AI card visually distinct, labelled "KI-Vorschlag".
-- **Detail view**: German ingredients and steps, favorite toggle. Page or modal
-  is decided in the Recipe detail spec.
+- **Detail view**: modal with German ingredients and steps, favorite toggle.
 - **Favorites**: reachable from the header.
 - Every request shows loading, empty, and error states; translation is slow, so
   loading feedback matters.
@@ -232,8 +232,5 @@ domain, or CI requirement.
 
 Deferred to feature specs by the plan:
 
-- Exact Claude model ids and translation prompt format.
-- How many search results to fetch for local re-ranking.
 - Whether search results are cached in addition to recipe details.
-- Detail view as separate route or modal.
 - Form of the favorite `id` (Favorites spec).

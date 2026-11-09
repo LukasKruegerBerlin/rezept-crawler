@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from app.routers import ai_recipe, ingredients, recipes, search
+from app.routers import ai_recipe, favorites, ingredients, recipes, search
 
 # API keys live in backend/.env; modules read them at request time.
 load_dotenv()
@@ -11,6 +11,7 @@ app.include_router(search.router)
 app.include_router(recipes.router)
 app.include_router(ingredients.router)
 app.include_router(ai_recipe.router)
+app.include_router(favorites.router)
 
 
 @app.get("/api/health")

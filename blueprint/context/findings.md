@@ -47,3 +47,36 @@ in between, which breaks heading-level navigation for screen-reader users
 **Suggested fix:** Use `h2` for the card titles, or add a visually hidden `h2`
 (e.g. "Ergebnisse") to the results section. No current requirement lost.
 **Resolution:**
+
+### F-04 [P3] open - Favorite POST persists client recipes without length or list-size limits
+
+**File:** backend/app/routers/favorites.py:20
+**Found:** 2026-11-09 by /audit independent (scope: current; lens: security)
+**Why it matters:** `POST /api/favorites` is the first endpoint that takes a
+full `RecipeDetail` from the client and writes it to disk (AI favorites keep
+the whole recipe). `RecipeDetail` has no `max_length` on `title`, `steps`, or
+`ingredients`, so any size is accepted and stored in `favorites.json`, which
+every later request re-reads. The coding standards ask for lengths and list
+sizes to be validated at the boundary. Impact is small because the backend is
+a single-user local tool and only the own frontend posts here.
+**Suggested fix:** Add generous Pydantic limits on the request side (for
+example `title` and step length, list sizes for `steps` and `ingredients`), or
+accept the drift explicitly for this single-user tool. No current requirement
+lost.
+**Resolution:**
+
+### F-05 [P3] open - Dev StrictMode moves focus to the Favoriten button on page load
+
+**File:** frontend/src/App.tsx:92
+**Found:** 2026-11-09 by /audit independent (scope: current; lens: quality)
+**Why it matters:** The view-focus effect skips its first run with the
+`viewChanged` ref. `main.tsx` renders in `StrictMode`, which runs mount
+effects twice in development while keeping ref values, so the second run sees
+`viewChanged.current === true` with `view === 'search'` and focuses the header
+"Favoriten" button on every page load. The project runs through the Vite dev
+server, so this is the normal runtime. Not confirmed in a browser.
+**Suggested fix:** Track the previous view instead of a first-run flag (for
+example store the last handled view in the ref and focus only when it
+differs), or move the focus calls into the click handlers that change the
+view. No current requirement lost.
+**Resolution:**

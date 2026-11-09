@@ -14,7 +14,7 @@ Scaffolding the app (done) and prototyping are pre-build steps, not features.
 - [x] 3. **Cooking time filter** - limit results to a maximum ready time
 - [x] 4. **AI recipe on request** - one labelled Claude-generated German recipe, generated only on request: a "KI-Rezept erstellen" button after every search, highlighted in a message with the found-recipe count when fewer than 3 results have 2 or fewer missing ingredients, or when Spoonacular is unavailable; still available after browsing the results
 - [x] 8. **Missing ingredients filter** - limit results to recipes with at most N missing ingredients (spices and pantry basics excluded, as in the missing count)
-- [ ] 5. **Favorites** - save, list, open, and remove Spoonacular and AI recipes, stored in local JSON
+- [x] 5. **Favorites** - save, list, open, and remove Spoonacular and AI recipes, stored in local JSON
 - [ ] 6. **UI polish** - consistent minimal layout, loading, empty, and error states, and keyboard accessibility across all views
 
 ### Later
