@@ -1,6 +1,7 @@
-import { type MouseEvent, useEffect, useRef } from 'react'
+import { type MouseEvent, useEffect, useRef, useState } from 'react'
 import type { IngredientLine } from '../api/recipes'
 import type { RecipeDetailState } from '../hooks/useRecipeDetail'
+import Spinner from './Spinner'
 
 export type FavoriteToggle = {
   saved: boolean
@@ -15,6 +16,8 @@ type RecipeDetailDialogProps = {
   onClose: () => void
   /** Shown only for a loaded recipe. */
   favorite: FavoriteToggle | null
+  /** Reloads the recipe after an error; omitted when there is nothing to reload. */
+  onRetry?: () => void
 }
 
 const TITLE_ID = 'recipe-detail-title'
@@ -26,8 +29,10 @@ function ingredientText({ amount, unit, name }: IngredientLine): string {
     .join(' ')
 }
 
-function RecipeDetailDialog({ open, state, onClose, favorite }: RecipeDetailDialogProps) {
+function RecipeDetailDialog({ open, state, onClose, favorite, onRetry }: RecipeDetailDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  // A photo that failed to load falls back to the placeholder; another recipe's URL shows again.
+  const [failedImage, setFailedImage] = useState<string | null>(null)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -55,10 +60,11 @@ function RecipeDetailDialog({ open, state, onClose, favorite }: RecipeDetailDial
         {/* AI recipes never have a photo, so they get no image area at all. */}
         {state.status === 'success' &&
           state.recipe.source !== 'ai' &&
-          (state.recipe.image ? (
+          (state.recipe.image && state.recipe.image !== failedImage ? (
             <img
               src={state.recipe.image}
               alt={state.recipe.title}
+              onError={(event) => setFailedImage(event.currentTarget.getAttribute('src'))}
               className="aspect-[16/9] w-full object-cover"
             />
           ) : (
@@ -75,9 +81,12 @@ function RecipeDetailDialog({ open, state, onClose, favorite }: RecipeDetailDial
                 <button
                   type="button"
                   aria-pressed={favorite.saved}
-                  disabled={favorite.busy}
-                  onClick={favorite.onToggle}
-                  className="rounded-xl px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-stone-300 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50 aria-pressed:bg-emerald-50 aria-pressed:text-emerald-900 aria-pressed:ring-emerald-300"
+                  // aria-disabled instead of disabled keeps keyboard focus on the button.
+                  aria-disabled={favorite.busy}
+                  onClick={() => {
+                    if (!favorite.busy) favorite.onToggle()
+                  }}
+                  className="rounded-xl px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-stone-300 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-pressed:bg-emerald-50 aria-pressed:text-emerald-900 aria-pressed:ring-emerald-300"
                 >
                   {favorite.saved ? 'Gespeichert – entfernen' : 'Als Favorit speichern'}
                 </button>
@@ -102,18 +111,38 @@ function RecipeDetailDialog({ open, state, onClose, favorite }: RecipeDetailDial
           )}
 
           {state.status === 'loading' && (
-            <p role="status" className="text-stone-600">
-              Rezept wird geladen und übersetzt…
-            </p>
+            <>
+              <p role="status" className="flex items-center gap-2 text-stone-600">
+                <Spinner />
+                Rezept wird geladen und übersetzt…
+              </p>
+              <div className="flex animate-pulse flex-col gap-3" aria-hidden="true">
+                <div className="h-5 w-1/3 rounded bg-stone-200" />
+                <div className="h-4 w-2/3 rounded bg-stone-100" />
+                <div className="h-4 w-1/2 rounded bg-stone-100" />
+                <div className="mt-3 h-5 w-1/3 rounded bg-stone-200" />
+                <div className="h-4 w-full rounded bg-stone-100" />
+                <div className="h-4 w-5/6 rounded bg-stone-100" />
+              </div>
+            </>
           )}
 
           {state.status === 'error' && (
-            <p
+            <div
               role="alert"
-              className="rounded-xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-200"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-200"
             >
-              {state.message}
-            </p>
+              <span>{state.message}</span>
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="rounded-xl bg-white px-3 py-1.5 text-sm font-medium text-red-800 ring-1 ring-red-300 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+                >
+                  Erneut versuchen
+                </button>
+              )}
+            </div>
           )}
 
           {state.status === 'success' && (

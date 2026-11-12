@@ -1,6 +1,7 @@
 import { type Ref, useRef, useState } from 'react'
 import { type Favorite, favoritesErrorMessage } from '../api/favorites'
 import type { FavoritesState } from '../hooks/useFavorites'
+import Spinner from './Spinner'
 
 type FavoritesListProps = {
   state: FavoritesState
@@ -64,7 +65,8 @@ function FavoritesList({
       </div>
 
       {state.status === 'loading' && (
-        <p role="status" className="text-stone-600">
+        <p role="status" className="flex items-center gap-2 text-stone-600">
+          <Spinner />
           Favoriten werden geladen…
         </p>
       )}
@@ -126,9 +128,12 @@ function FavoritesList({
                   </div>
                   <button
                     type="button"
-                    onClick={() => void handleRemove(favorite.id, state.favorites)}
-                    disabled={removingId === favorite.id}
-                    className="shrink-0 rounded-xl px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-stone-300 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50"
+                    onClick={() => {
+                      if (removingId !== favorite.id) void handleRemove(favorite.id, state.favorites)
+                    }}
+                    // aria-disabled instead of disabled keeps keyboard focus on the button.
+                    aria-disabled={removingId === favorite.id}
+                    className="shrink-0 rounded-xl px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-stone-300 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
                   >
                     Entfernen
                   </button>

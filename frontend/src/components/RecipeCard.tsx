@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { RecipeSummary } from '../api/search'
 
 type RecipeCardProps = {
@@ -7,14 +8,17 @@ type RecipeCardProps = {
 
 function RecipeCard({ recipe, onOpen }: RecipeCardProps) {
   const isComplete = recipe.missing_count === 0
+  // A photo that failed to load falls back to the placeholder.
+  const [failedImage, setFailedImage] = useState<string | null>(null)
 
   return (
     <article className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200 transition-shadow hover:shadow-md">
-      {recipe.image ? (
+      {recipe.image && recipe.image !== failedImage ? (
         <img
           src={recipe.image}
           alt={recipe.title}
           loading="lazy"
+          onError={(event) => setFailedImage(event.currentTarget.getAttribute('src'))}
           className="aspect-[4/3] w-full object-cover"
         />
       ) : (

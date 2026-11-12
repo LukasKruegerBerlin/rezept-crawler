@@ -1,5 +1,6 @@
 import type { AiRecipeState } from '../hooks/useAiRecipe'
 import { missingPhrase } from '../missingFilter'
+import Spinner from './Spinner'
 
 type AiOfferProps = {
   /** Total Spoonacular results of the search. */
@@ -52,9 +53,12 @@ function AiOffer({ weakResults, state, onGenerate, ...counts }: AiOfferProps) {
       <p>{weakResults ? offerText(counts) : 'Nichts Passendes dabei?'}</p>
       <button
         type="button"
-        onClick={onGenerate}
-        disabled={isLoading}
-        className={`shrink-0 rounded-xl px-4 py-2 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600 ${
+        onClick={() => {
+          if (!isLoading) onGenerate()
+        }}
+        // aria-disabled instead of disabled keeps keyboard focus on the button.
+        aria-disabled={isLoading}
+        className={`shrink-0 rounded-xl px-4 py-2 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 ${
           weakResults
             ? 'bg-emerald-700 text-white hover:bg-emerald-800'
             : 'text-emerald-800 ring-1 ring-emerald-700 hover:bg-emerald-50'
@@ -63,7 +67,8 @@ function AiOffer({ weakResults, state, onGenerate, ...counts }: AiOfferProps) {
         KI-Rezept erstellen
       </button>
       {isLoading && (
-        <p role="status" className="basis-full text-sm">
+        <p role="status" className="flex basis-full items-center gap-2 text-sm">
+          <Spinner />
           KI-Rezept wird erstellt… das kann bis zu einer Minute dauern.
         </p>
       )}

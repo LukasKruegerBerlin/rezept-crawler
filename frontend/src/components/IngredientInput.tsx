@@ -164,7 +164,7 @@ function IngredientInput({
               aria-activedescendant={activeIndex === -1 ? undefined : optionId(activeIndex)}
               placeholder="Zutat eingeben und Enter drücken"
               autoComplete="off"
-              className="min-w-40 flex-1 bg-transparent py-1 outline-none placeholder:text-stone-400"
+              className="min-w-40 flex-1 bg-transparent py-1 outline-none placeholder:text-stone-500"
             />
           </div>
           <ul

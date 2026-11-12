@@ -7,6 +7,7 @@ import FavoritesList from './components/FavoritesList'
 import IngredientInput from './components/IngredientInput'
 import RecipeCard from './components/RecipeCard'
 import RecipeDetailDialog from './components/RecipeDetailDialog'
+import Spinner from './components/Spinner'
 import { useAiRecipe } from './hooks/useAiRecipe'
 import { useFavorites } from './hooks/useFavorites'
 import { useKnownIngredients } from './hooks/useKnownIngredients'
@@ -71,6 +72,8 @@ function App() {
   const generated = aiRecipe.state.status === 'success' ? aiRecipe.state.recipe : null
   const aiCardButton = useRef<HTMLButtonElement>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+  // Spoonacular id of the open recipe, for the retry after a failed load; null for AI recipes.
+  const [detailId, setDetailId] = useState<number | null>(null)
   // Focus goes back to the card that opened the detail.
   const detailTrigger = useRef<HTMLButtonElement | null>(null)
   const favorites = useFavorites()
@@ -112,6 +115,7 @@ function App() {
 
   function openDetail(spoonacularId: number, trigger: HTMLButtonElement) {
     resetFavoriteToggle()
+    setDetailId(spoonacularId)
     detailTrigger.current = trigger
     void detail.load(spoonacularId)
     setIsDetailOpen(true)
@@ -119,6 +123,7 @@ function App() {
 
   function openAiRecipe(recipe: RecipeDetail, trigger: HTMLButtonElement) {
     resetFavoriteToggle()
+    setDetailId(null)
     detailTrigger.current = trigger
     detail.show(recipe)
     setIsDetailOpen(true)
@@ -234,9 +239,30 @@ function App() {
         />
 
         <section className="mt-10" aria-busy={state.status === 'loading'}>
-          <p role="status" className="text-stone-600">
+          <p role="status" className="flex items-center gap-2 text-stone-600">
+            {state.status === 'loading' && <Spinner />}
             {statusText(state, maxMissing, visibleResults.length)}
           </p>
+          {state.status === 'loading' && (
+            <>
+              <p className="mt-1 text-sm text-stone-500">Das kann bis zu 30 Sekunden dauern.</p>
+              <ul className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+                {[0, 1, 2].map((index) => (
+                  <li
+                    key={index}
+                    className="animate-pulse overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200"
+                  >
+                    <div className="aspect-[4/3] w-full bg-stone-100" />
+                    <div className="flex flex-col gap-3 p-4">
+                      <div className="h-5 w-3/4 rounded bg-stone-200" />
+                      <div className="h-4 w-1/4 rounded bg-stone-100" />
+                      <div className="h-4 w-full rounded bg-stone-100" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {state.status === 'error' && (
             <p
               role="alert"
@@ -291,6 +317,7 @@ function App() {
         open={isDetailOpen}
         state={detail.state}
         onClose={closeDetail}
+        onRetry={detailId === null ? undefined : () => void detail.load(detailId)}
         favorite={
           openRecipe === null
             ? null
