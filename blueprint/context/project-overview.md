@@ -1,6 +1,6 @@
 # Recipe Crawler - Project Overview
 
-<!-- blueprint:source-hash 50604b54481b037d98d1210569e28f95e2b803b2a793d4c63ac41e2e9ae1be54 -->
+<!-- blueprint:source-hash 4113c81b06fc063c05c4f7467451b094ced3fd0f643ebbf9cd3563a321c3e535 -->
 
 > Local personal tool: enter the ingredients you have, get ranked German recipe suggestions you can cook now or with very few missing ingredients.
 
@@ -51,10 +51,18 @@ built after 2 and 4. Completion state lives in `build-plan.md`.
 - **6. UI polish** - consistent minimal layout, loading/empty/error states,
   keyboard accessibility across all views.
 
+Next:
+
+- **9. Search ranking mode** - a switch on the search form picks the ranking
+  rule: fewest missing ingredients (default, no time to shop) or most of the
+  user's ingredients used. Sets Spoonacular's `sort` and the local ranking order.
+  Plus a result-count choice (20, 50, or 100; default and missing value = 20)
+  for Spoonacular `number`; all
+  fetched recipes are ranked, translated, and shown (more = more quota, slower
+  translation).
+
 Later (not tracked yet): diet and intolerance filters; shopping list for missing
-ingredients; search relevance (with `sort=min-missing-ingredients` candidates
-often use only 1-2 entered ingredients, `max-used-ingredients` tested better);
-search speed (~22 s per search, mostly the two `claude -p` calls); correcting
+ingredients; search speed (~22 s per search, mostly the two `claude -p` calls); correcting
 odd translations in the UI by editing translation-dictionary entries.
 
 ### Business rules
@@ -62,7 +70,12 @@ odd translations in the UI by editing translation-dictionary entries.
 - **Missing count** = Spoonacular missed ingredients minus spices/seasonings
   (by Spoonacular classification) and pantry basics (water, salt, flour, etc.,
   ignored via `ignorePantry`). Spices stay listed in the recipe itself.
-- **Ranking**: ascending missing count; ties -> more of the user's ingredients used.
+- **Ranking** follows the search ranking mode (Feature 9):
+  - `fewest missing` (default): ascending missing count; ties -> more of the
+    user's ingredients used. Spoonacular `sort=min-missing-ingredients`.
+  - `most used`: descending used-ingredient count; ties -> lower missing count.
+    Spoonacular `sort=max-used-ingredients`.
+- The AI-recipe highlight threshold below is identical in both modes.
 - **AI recipe only on request**: never generated automatically. A "KI-Rezept
   erstellen" button follows every search and is highlighted in a message when:
   - fewer than 3 API recipes have missing count <= 2 (message states how many
@@ -129,15 +142,14 @@ Ingredient lists, search history, and user data are **not** stored.
 
 ### Favorite - `backend/data/favorites.json` (list)
 
-- `id` (str) - stable favorite id for open/remove, also for AI favorites
+- `id` (str) - backend-generated `uuid4().hex`; stable id for open/remove,
+  also for AI favorites
 - `source` ("spoonacular" | "ai")
 - `spoonacular_id` (int | null)
 - `title` (str) - German
 - `saved_at` (ISO-8601 datetime)
 - `recipe` (RecipeDetail | null) - required for `ai` (cannot be refetched);
   null for `spoonacular` (opened via the recipe cache)
-
-> The form of `id` is decided in the Favorites spec (Feature 5).
 
 ### RecipeSummary (search result, not persisted)
 
@@ -168,12 +180,13 @@ Ingredient lists, search history, and user data are **not** stored.
 - Filled from every successful translation (search and recipe detail); only
   unknown texts go to the `claude` CLI, so Claude calls stay as rare as possible.
 
-### Search result cache (optional)
+### Search result cache
 
-Whether to cache search results to save Spoonacular quota is decided in a
-feature spec. Shape is not locked.
+Not built: every search calls Spoonacular again. Only recipe details (recipe
+cache) and translations (dictionary) are reused across searches.
 
-> Lock `RecipeDetail` in Feature 2: favorites (5) and the AI fallback (4) reuse it.
+> Ranking mode and result count (Feature 9) are per-search request parameters,
+> not persisted; their exact request fields are locked in the Feature 9 spec.
 
 ## Tech stack
 
@@ -181,10 +194,10 @@ feature spec. Shape is not locked.
 - **Frontend**: React 19 + TypeScript + Vite, npm (`frontend/`); Vite proxies `/api` to port 8000.
 - **Styling**: Tailwind CSS (added in Feature 1).
 - **Recipe API**: Spoonacular `complexSearch` (`includeIngredients`,
-  `fillIngredients`, `sort=min-missing-ingredients`, `maxReadyTime`,
-  `ignorePantry`, `number=20` for local re-ranking); details via the recipe
-  information endpoint with metric measures. `sort=max-used-ingredients`
-  tested better for relevance; switching is a Later item. Free tier has a
+  `fillIngredients`, `sort` = `min-missing-ingredients` or
+  `max-used-ingredients` per ranking mode, `maxReadyTime`, `ignorePantry`,
+  `number` = chosen result count 20/50/100, default 20, for local re-ranking); details via the recipe information
+  endpoint with metric measures. Free tier has a
   small daily point quota, so caching matters.
 - **LLM**: Claude via the Claude Code CLI in headless mode (`claude -p`),
   authenticated with the owner's Claude Pro subscription - no extra API costs;
@@ -209,7 +222,8 @@ photos carry the visual weight.
 
 - **Main page**: ingredient chips input (type, Enter to add, x to remove) with
   an autocomplete list of up to 5 known ingredients (keyboard-selectable),
-  max-time and missing-ingredients filters at the top; recipe card grid below.
+  max-time and missing-ingredients filters, the ranking-mode switch, and the
+  result count at the top; recipe card grid below.
 - **AI offer**: "KI-Rezept erstellen" button above the grid after every search,
   inside a highlighted message when results are weak or live recipes are
   unavailable.
@@ -230,7 +244,4 @@ domain, or CI requirement.
 
 ## Open questions
 
-Deferred to feature specs by the plan:
-
-- Whether search results are cached in addition to recipe details.
-- Form of the favorite `id` (Favorites spec).
+None in the plans. Feature 9 spec decides the switch labels and request field.

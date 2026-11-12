@@ -17,12 +17,14 @@ Scaffolding the app (done) and prototyping are pre-build steps, not features.
 - [x] 5. **Favorites** - save, list, open, and remove Spoonacular and AI recipes, stored in local JSON
 - [x] 6. **UI polish** - consistent minimal layout, loading, empty, and error states, and keyboard accessibility across all views
 
+### Next
+
+- [ ] 9. **Search ranking mode** - a switch on the search form picks the ranking rule: fewest missing ingredients (no time to shop; current behavior and default) or most of my ingredients used; it sets Spoonacular's `sort` (`min-missing-ingredients` / `max-used-ingredients`) and the local ranking order; plus a choice of how many recipes a search fetches and shows (Spoonacular `number`: 20, 50, or 100; default and empty value = 20)
+
 ### Later
 
 - Diet and intolerance filters
 - Shopping list for missing ingredients
-- Search result relevance: candidates often use only 1-2 entered ingredients
-  with `sort=min-missing-ingredients`; `max-used-ingredients` tested better
 - Search speed: ~22 s per search, mostly the two `claude -p` CLI calls
 - Correct odd translations in the UI: edit entries of the translation
   dictionary instead of editing `translations.json` by hand

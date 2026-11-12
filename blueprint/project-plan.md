@@ -40,6 +40,13 @@ Just me, as a personal tool running locally on my machine.
 - **Max cooking time filter**: e.g. only recipes ready in 30 minutes or less
 - **Missing ingredients filter**: only recipes with at most N missing
   ingredients (missing count as defined in the business rules)
+- **Search ranking mode**: a switch chooses between "fewest missing
+  ingredients" (default, for when there is no time to shop) and "most of my
+  ingredients used"; it applies to both the Spoonacular candidate search and
+  the local ranking
+- **Result count**: I choose how many recipes a search fetches: 20, 50, or
+  100 (default 20; no value means 20); all of them are ranked, translated, and shown. More recipes
+  cost more Spoonacular quota and make the translation step slower
 - **AI recipe on request**: one Claude-generated German recipe, only generated
   when I ask for it; offered after every search and highlighted when the API
   results are weak or unavailable (rules below)
@@ -50,8 +57,12 @@ Just me, as a personal tool running locally on my machine.
 
 - A recipe's **missing count** = missed ingredients minus spices and
   pantry basics
-- **Ranking**: ascending missing count; ties broken by more of my ingredients
-  used
+- **Ranking** depends on the search ranking mode:
+  - fewest missing (default): ascending missing count; ties broken by more of
+    my ingredients used
+  - most used: descending number of my ingredients used; ties broken by lower
+    missing count
+- The AI recipe threshold below is the same in both modes
 - **AI recipe is never generated automatically.** After every search a
   "KI-Rezept erstellen" button is offered. It is highlighted in a message when
   either:
@@ -89,7 +100,6 @@ Just me, as a personal tool running locally on my machine.
 
 - Diet and intolerance filters (later)
 - Shopping list for missing ingredients (later)
-- Better search relevance via `sort=max-used-ingredients` (later)
 - Faster search: fewer or faster `claude -p` calls (later)
 - Correcting translations in the UI by editing dictionary entries (later)
 - Saved pantry or "always available" list (spice/pantry rules cover this)
@@ -114,8 +124,7 @@ Local JSON files under `backend/data/` (git-ignored):
   and unit translation, so Claude is only asked for texts it has never
   translated before (Claude calls are slow). Cooking steps are not included.
   Its German ingredient entries also feed the ingredient autocomplete
-- **Search result cache** (optional, decided in feature specs): to save
-  Spoonacular quota for repeated searches
+- **Search result cache**: not built; each search calls Spoonacular again
 
 Not stored: ingredient lists, search history, any user data
 
@@ -126,11 +135,11 @@ Not stored: ingredient lists, search history, any user data
   Vite dev proxy for `/api`
 - **Styling**: Tailwind CSS
 - **Recipe API**: Spoonacular. Endpoint `complexSearch` with
-  `includeIngredients`, `fillIngredients`, `sort=min-missing-ingredients`,
-  `maxReadyTime`, `ignorePantry`, and `number=20` (fetched for local
-  re-ranking); recipe details via the recipe information endpoint with metric
-  measures. `sort=max-used-ingredients` tested better for relevance; switching
-  is a later build-plan item. Free tier has a small daily point quota, so
+  `includeIngredients`, `fillIngredients`, `sort` (`min-missing-ingredients`
+  or `max-used-ingredients`, per ranking mode), `maxReadyTime`,
+  `ignorePantry`, and `number` (the chosen result count: 20, 50, or 100;
+  fetched for local re-ranking); recipe
+  details via the recipe information endpoint with metric measures. Free tier has a small daily point quota, so
   caching matters
 - **LLM**: Claude via the Claude Code CLI in headless mode (`claude -p`),
   authenticated with my Claude Pro subscription, so there are no extra API
@@ -153,7 +162,8 @@ usage is covered by my existing Claude Pro subscription.
 Clean and minimal, German UI text throughout.
 
 - Single main page: ingredient input as chips (type, Enter to add, x to remove)
-  plus the max-time and missing-ingredients filters at the top, recipe cards
+  plus the max-time and missing-ingredients filters, the ranking-mode switch,
+  and the result count at the top, recipe cards
   grid below
 - Above the grid: the "KI-Rezept erstellen" button, inside a highlighted
   message when results are weak or live recipes are unavailable
@@ -182,7 +192,8 @@ account.
 - No auth, no rate limiting beyond respecting the Spoonacular quota
 - Non-requirements: multi-user, multi-tenant, compliance, high availability
 
-## Open decisions (safe to defer to feature specs)
+## Resolved decisions
 
-- Whether search results are cached in addition to recipe details
-- Form of the favorite id (decided in the Favorites spec)
+- Search results are not cached; only recipe details (recipe cache) and
+  translations (dictionary) are reused across searches
+- The favorite id is a backend-generated `uuid4().hex` (Favorites spec)
